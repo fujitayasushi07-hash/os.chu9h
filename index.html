@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>GLITCHY BIOS</title>
+    <link rel="stylesheet" href="css/boot.css" />
+</head>
+<body>
+    <canvas id="stars"></canvas>
+
+    <div id="boot-screen" style="display:none;">
+        <img src="assets/images/logo.png" alt="Glitchy Logo" id="logo" />
+
+<pre id="bios-text"></pre>
+
+        <div id="enter-hint" class="hidden">
+            Press <span>ANY KEY</span> to Initialize GlitchyBunnies
+            <span id="countdown">(10)</span><span id="cursor">_</span>
+        </div>
+    </div>
+
+    <script src="js/boot.js"></script>
+
+    <audio id="biosSound" src="assets/sounds/bios.wav" preload="auto"></audio>
+
+</body>
+
+

@@ -1,0 +1,20 @@
+# Visual Studio
+.vs/
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+
+# Archives / temporary project exports
+*.zip
+
+# OS / editor files
+.DS_Store
+
+# macOS metadata
+__MACOSX/
+._*

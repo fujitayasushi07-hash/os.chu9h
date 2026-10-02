@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Log On to GLITCHY SYSTEMS</title>
+
+    <!-- 98.css -->
+    <link rel="stylesheet" href="https://unpkg.com/98.css" />
+
+    <style>
+        body {
+            background: #008080;
+            height: 100vh;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: "MS Sans Serif", Tahoma, sans-serif;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        .login-window {
+            width: 360px;
+            max-width: 100%;
+            position: relative;
+        }
+
+        .login-content {
+            display: flex;
+            gap: 16px;
+            padding: 12px;
+            align-items: center;
+        }
+
+        .user-icon {
+            width: 48px;
+            height: 48px;
+            background: silver;
+            border: inset 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+            .user-icon img {
+                width: 48px;
+                height: 48px;
+                image-rendering: pixelated;
+            }
+
+        .fields {
+            flex: 1;
+            font-size: 12px;
+            min-width: 0;
+        }
+
+            .fields label {
+                display: block;
+                margin-bottom: 4px;
+            }
+
+            .fields input {
+                width: 100%;
+                box-sizing: border-box;
+                font-size: 16px; /* Prevents iOS zoom on focus */
+            }
+
+        .buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 6px;
+            padding: 0 12px 12px;
+        }
+
+        .glitchy-subtitle {
+            font-size: 11px;
+            color: #004040;
+            padding: 10px 12px 0;
+        }
+
+        /* HELP WINDOW */
+        .help-window {
+            width: 260px;
+            max-width: 90%;
+            position: absolute;
+            top: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            display: none;
+            z-index: 10;
+        }
+
+            /* Force help window to match login font */
+            .help-window,
+            .help-window .window-body,
+            .help-window p,
+            .help-window button {
+                font-family: "MS Sans Serif", Tahoma, sans-serif;
+            }
+
+        /* FADE TRANSITION */
+        #fade-overlay {
+            position: fixed;
+            inset: 0;
+            background: black;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.15s linear;
+            z-index: 9999;
+        }
+
+            #fade-overlay.active {
+                opacity: 1;
+            }
+
+        /* ===== MOBILE RESPONSIVE ===== */
+        @media (max-width: 400px) {
+            .login-window {
+                width: 100%;
+            }
+            
+            .login-content {
+                gap: 10px;
+                padding: 10px;
+            }
+            
+            .user-icon {
+                width: 40px;
+                height: 40px;
+            }
+            
+            .user-icon img {
+                width: 40px;
+                height: 40px;
+            }
+            
+            .buttons button {
+                padding: 4px 12px;
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- LOGIN WINDOW -->
+    <div class="window login-window" id="loginWindow">
+        <div class="title-bar" id="loginTitle">
+            <div class="title-bar-text">Enter 404 Password</div>
+            <div class="title-bar-controls">
+                <button aria-label="Help" id="helpBtn"></button>
+                <button aria-label="Close"></button>
+            </div>
+        </div>
+
+        <div class="window-body">
+            <div class="glitchy-subtitle">
+                Enter your password for Autism Spectrum Networking
+            </div>
+
+            <div class="login-content">
+                <div class="user-icon">
+                    <img src="assets/images/login-key.png" alt="Key Icon" />
+                </div>
+
+                <div class="fields">
+                    <label for="password">Enter password:</label>
+                    <input type="password" id="password" />
+                </div>
+            </div>
+
+            <div class="buttons">
+                <button id="okBtn">OK</button>
+                <button id="cancelBtn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- HELP WINDOW -->
+    <div class="window help-window" id="helpWindow">
+        <div class="title-bar" id="helpTitle">
+            <div class="title-bar-text">Help</div>
+            <div class="title-bar-controls">
+                <button aria-label="Close" id="helpCloseBtn"></button>
+            </div>
+        </div>
+
+        <div class="window-body">
+            <p>
+                If you forgot your password,<br>
+                perhaps you were never meant to log in.
+            </p>
+
+            <div style="text-align:right; margin-top:12px;">
+                <button id="helpOkBtn">OK</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        /* =====================
+           DRAGGING (LOGIN) - Mouse + Touch support
+        ===================== */
+        function makeDraggable(windowEl, titleEl) {
+            let isDragging = false;
+            let offsetX = 0;
+            let offsetY = 0;
+
+            // Mouse events
+            titleEl.addEventListener("mousedown", (e) => {
+                isDragging = true;
+                offsetX = e.clientX - windowEl.offsetLeft;
+                offsetY = e.clientY - windowEl.offsetTop;
+            });
+
+            document.addEventListener("mousemove", (e) => {
+                if (!isDragging) return;
+                windowEl.style.left = e.clientX - offsetX + "px";
+                windowEl.style.top = e.clientY - offsetY + "px";
+            });
+
+            document.addEventListener("mouseup", () => {
+                isDragging = false;
+            });
+            
+            // Touch events for mobile
+            titleEl.addEventListener("touchstart", (e) => {
+                if (e.touches.length === 1) {
+                    isDragging = true;
+                    const touch = e.touches[0];
+                    offsetX = touch.clientX - windowEl.offsetLeft;
+                    offsetY = touch.clientY - windowEl.offsetTop;
+                }
+            }, { passive: true });
+
+            document.addEventListener("touchmove", (e) => {
+                if (!isDragging || e.touches.length !== 1) return;
+                const touch = e.touches[0];
+                windowEl.style.left = touch.clientX - offsetX + "px";
+                windowEl.style.top = touch.clientY - offsetY + "px";
+            }, { passive: true });
+
+            document.addEventListener("touchend", () => {
+                isDragging = false;
+            });
+        }
+
+        makeDraggable(
+            document.getElementById("loginWindow"),
+            document.getElementById("loginTitle")
+        );
+
+        makeDraggable(
+            document.getElementById("helpWindow"),
+            document.getElementById("helpTitle")
+        );
+
+        /* =====================
+           LOGIN BUTTONS
+        ===================== */
+        const validPasswords = ["1234", "gae", "404 password", "glitchybunnies", "404"];
+
+        document.getElementById("okBtn").addEventListener("click", () => {
+            const passwordInput = document.getElementById("password");
+            const enteredPassword = passwordInput.value;
+
+            // Check if password is valid
+            if (!validPasswords.includes(enteredPassword)) {
+                // Play error sound
+                const errorSound = document.getElementById("errorSound");
+                if (errorSound) {
+                    errorSound.currentTime = 0;
+                    errorSound.volume = 0.6;
+                    errorSound.play().catch(() => { });
+                }
+                // Clear the password field
+                passwordInput.value = "";
+                return;
+            }
+
+            const fade = document.getElementById("fade-overlay");
+            const loginWindow = document.getElementById("loginWindow");
+
+            // Tell desktop to play startup sound
+            sessionStorage.setItem("playStartupSound", "true");
+
+            // Instantly hide the login window (IMPORTANT)
+            loginWindow.style.display = "none";
+
+            // Immediately blank the screen
+            fade.classList.add("active");
+
+            // Move to desktop after a short pause
+            setTimeout(() => {
+                window.location.href = "desktop.html";
+            }, 200);
+        });
+
+
+        document.getElementById("cancelBtn").addEventListener("click", () => {
+            location.reload();
+        });
+
+        document.getElementById("password").addEventListener("keydown", e => {
+            if (e.key === "Enter") {
+                document.getElementById("okBtn").click();
+            }
+        });
+
+        /* =====================
+           HELP WINDOW LOGIC
+        ===================== */
+        document.getElementById("helpBtn").addEventListener("click", () => {
+            const helpWindow = document.getElementById("helpWindow");
+            const loginWindow = document.getElementById("loginWindow");
+
+            // Get login window position
+            const rect = loginWindow.getBoundingClientRect();
+
+            // Position help window slightly above & left
+            helpWindow.style.left = rect.left + 190 + "px";
+            helpWindow.style.top = rect.top - 45 + "px";
+
+            helpWindow.style.display = "block";
+        });
+
+
+        document.getElementById("helpOkBtn").addEventListener("click", () => {
+            document.getElementById("helpWindow").style.display = "none";
+        });
+
+        document.getElementById("helpCloseBtn").addEventListener("click", () => {
+            document.getElementById("helpWindow").style.display = "none";
+        });
+
+        // LOGIN WINDOW X BUTTON SOUND
+        const loginCloseBtn = document.querySelector(
+            '#loginWindow .title-bar-controls button[aria-label="Close"]'
+        );
+
+        if (loginCloseBtn) {
+            loginCloseBtn.addEventListener("click", () => {
+                const snd = document.getElementById("closeSound");
+
+                if (snd) {
+                    snd.currentTime = 0;
+                    snd.volume = 0.6;
+                    snd.play().catch(() => { });
+                }
+            });
+        }
+
+    </script>
+
+    <audio id="closeSound" src="assets/sounds/close.wav" preload="auto"></audio>
+    <audio id="errorSound" src="assets/sounds/win98-error.wav" preload="auto"></audio>
+
+    <div id="fade-overlay"></div>
+
+</body>
+</html>
