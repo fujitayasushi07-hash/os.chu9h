@@ -1342,101 +1342,119 @@
     }
 }
 
-.volume-control-window {
-    width: 230px !important;
-    min-width: 0 !important;
-    max-width: calc(100vw - 16px) !important;
-    box-sizing: border-box;
+.volume-popup {
+    position: fixed;
+    z-index: 9001;
+    width: 72px;
+    height: 136px;
+    background: #c0c0c0 url("assets/volume/back.png") no-repeat;
 }
 
-.volume-control-window .window-body {
-    padding: 8px 12px;
-}
-
-.volume-control-panel {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    color: #000;
-    font: 11px Arial, sans-serif;
-}
-
-.volume-control-level {
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    gap: 12px;
-    min-height: 116px;
-}
-
-.volume-control-speaker {
-    width: 24px;
-    height: 24px;
-    margin-top: 4px;
-    object-fit: contain;
-    image-rendering: pixelated;
+.volume-popup[hidden] {
+    display: none;
 }
 
 #system-volume-slider {
+    position: absolute;
+    top: 25px;
+    left: 25.5px;
     appearance: none;
     -webkit-appearance: none;
     writing-mode: vertical-lr;
     direction: rtl;
-    width: 20px;
-    height: 112px;
+    width: 25px;
+    height: 83px;
     margin: 0;
-    padding: 2px;
-    border: 2px inset #808080;
+    padding: 0;
+    border: 0;
     border-radius: 0;
-    background: #c0c0c0;
-    accent-color: #000080;
+    background: transparent;
     cursor: pointer;
 }
 
 #system-volume-slider::-webkit-slider-runnable-track {
     width: 100%;
     height: 100%;
-    background: #c0c0c0;
+    background: transparent;
 }
 
 #system-volume-slider::-webkit-slider-thumb {
     appearance: none;
     -webkit-appearance: none;
-    width: 18px;
-    height: 8px;
-    border: 2px outset #dfdfdf;
+    width: 25px;
+    height: 11px;
+    border: 0;
     border-radius: 0;
-    background: #c0c0c0;
+    background: transparent;
+    opacity: 0;
 }
 
 #system-volume-slider::-moz-range-track {
     width: 100%;
     height: 100%;
-    background: #c0c0c0;
+    border: 0;
+    background: transparent;
 }
 
 #system-volume-slider::-moz-range-thumb {
-    width: 14px;
-    height: 6px;
-    border: 2px outset #dfdfdf;
+    width: 25px;
+    height: 11px;
+    border: 0;
     border-radius: 0;
-    background: #c0c0c0;
+    background: transparent;
+    opacity: 0;
 }
 
-.volume-control-value {
-    align-self: center;
-    min-width: 30px;
-    font-size: 10px;
-    text-align: center;
+.volume-popup-knob {
+    position: absolute;
+    z-index: 1;
+    left: 26px;
+    top: 25px;
+    width: 25px;
+    height: 11px;
+    background: url("assets/volume/knob.png") no-repeat center;
+    pointer-events: none;
 }
 
-.volume-control-mute {
-    align-self: flex-start;
-    display: flex;
-    align-items: center;
-    gap: 4px;
+#system-volume-mute + .volume-popup-mute {
+    position: absolute !important;
+    top: 117px !important;
+    left: 9px !important;
+    width: 12px;
+    height: 14px;
+    margin: 0 !important;
+    padding: 0 !important;
+    color: transparent;
+    font-size: 0;
+    pointer-events: none;
+}
+
+.volume-popup-mute::before {
+    display: none !important;
+}
+
+.volume-popup-mute::after {
+    content: none !important;
+}
+
+#system-volume-mute:checked + .volume-popup-mute::after {
+    content: "" !important;
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    display: block;
+    width: 7px;
+    height: 7px;
+}
+
+#system-volume-mute {
+    position: absolute !important;
+    top: 117px !important;
+    left: 9px !important;
+    width: 12px !important;
+    height: 14px !important;
+    z-index: 2;
+    opacity: 0 !important;
 }
 
 
@@ -1534,11 +1552,18 @@
 
 
         <div id="tray">
-            <img id="tray-volume" src="assets/images/icon-volume.png" title="Volume" style="cursor:pointer;">
+            <img id="tray-volume" src="assets/images/icon-volume.png" title="Volume" aria-controls="volume-popup" aria-expanded="false" style="cursor:pointer;">
             <img id="tray-antivirus" src="assets/images/msagent.png" style="display:none;width:16px;height:16px;image-rendering:pixelated;cursor:pointer;" title="Security Alert">
             <img src="assets/images/icon-network.png">
             <span id="clock">00:00</span>
         </div>
+    </div>
+
+    <div id="volume-popup" class="volume-popup" role="group" aria-label="Volume" hidden>
+        <input id="system-volume-slider" type="range" min="0" max="100" value="100" aria-label="Volume">
+        <span id="system-volume-knob" class="volume-popup-knob" aria-hidden="true"></span>
+        <input id="system-volume-mute" type="checkbox">
+        <label class="volume-popup-mute" for="system-volume-mute" aria-label="Mute"></label>
     </div>
 
     <!-- START MENU -->
@@ -1862,38 +1887,75 @@ document.getElementById("start-documents")?.addEventListener("click", () => {
 });
 
 // Volume Control
-document.getElementById("tray-volume")?.addEventListener("click", () => {
-    const volumeWindow = openWindow(
-        "Volume Control",
-        `<div class="volume-control-panel">
-            <div class="volume-control-level">
-                <img class="volume-control-speaker" src="assets/images/icon-volume.png" alt="">
-                <input id="system-volume-slider" type="range" min="0" max="100" value="${Math.round(masterVolume * 100)}" aria-label="Volume">
-                <span id="system-volume-percent" class="volume-control-value">${Math.round(masterVolume * 100)}%</span>
-            </div>
-            <div class="volume-control-mute">
-                <input id="system-volume-mute" type="checkbox"${masterVolumeMuted ? " checked" : ""}>
-                <label for="system-volume-mute">Mute</label>
-            </div>
-        </div>`,
-        "assets/images/icon-volume.png"
-    );
-    volumeWindow.classList.add("volume-control-window");
-    volumeWindow.style.height = "auto";
+const volumePopup = document.getElementById("volume-popup");
+const volumeSlider = document.getElementById("system-volume-slider");
+const volumeKnob = document.getElementById("system-volume-knob");
+const volumeMute = document.getElementById("system-volume-mute");
+const trayVolume = document.getElementById("tray-volume");
 
-    const volumeSlider = volumeWindow.querySelector("#system-volume-slider");
-    const volumePercent = volumeWindow.querySelector("#system-volume-percent");
-    const volumeMute = volumeWindow.querySelector("#system-volume-mute");
-    volumeSlider.oninput = () => {
-        masterVolume = Number(volumeSlider.value) / 100;
-        volumePercent.textContent = `${volumeSlider.value}%`;
-        if (masterGain) masterGain.gain.value = masterVolumeMuted ? 0 : masterVolume;
-    };
-    volumeMute.onchange = () => {
-        masterVolumeMuted = volumeMute.checked;
-        if (masterGain) masterGain.gain.value = masterVolumeMuted ? 0 : masterVolume;
-    };
+function updateVolumeKnob() {
+    const minKnobTop = 96;
+    const maxKnobTop = 26;
+    const volume = Number(volumeSlider.value) / 100;
+    volumeKnob.style.top = `${minKnobTop - volume * (minKnobTop - maxKnobTop)}px`;
+}
+
+function positionVolumePopup() {
+    const trayBounds = trayVolume.getBoundingClientRect();
+    const taskbarBounds = document.getElementById("taskbar").getBoundingClientRect();
+    const left = trayBounds.left + trayBounds.width / 2 - volumePopup.offsetWidth / 2;
+    volumePopup.style.left = `${Math.max(4, Math.min(window.innerWidth - volumePopup.offsetWidth - 4, left))}px`;
+    volumePopup.style.top = `${taskbarBounds.top - volumePopup.offsetHeight - 2}px`;
+}
+
+function updateTrayVolumeIcon() {
+    trayVolume.src = masterVolumeMuted || masterVolume === 0
+        ? "assets/images/loudspeaker_muted-0.png"
+        : "assets/images/icon-volume.png";
+}
+
+document.getElementById("tray-volume")?.addEventListener("click", () => {
+    if (!volumePopup.hidden) {
+        volumePopup.hidden = true;
+        trayVolume.setAttribute("aria-expanded", "false");
+        return;
+    }
+
+    volumeSlider.value = Math.round(masterVolume * 100);
+    updateVolumeKnob();
+    volumeMute.checked = masterVolumeMuted;
+    volumePopup.hidden = false;
+
+    positionVolumePopup();
+    trayVolume.setAttribute("aria-expanded", "true");
 });
+
+document.addEventListener("click", event => {
+    if (!volumePopup.hidden && !volumePopup.contains(event.target) && !trayVolume.contains(event.target)) {
+        volumePopup.hidden = true;
+        trayVolume.setAttribute("aria-expanded", "false");
+    }
+});
+
+window.addEventListener("resize", () => {
+    if (!volumePopup.hidden) positionVolumePopup();
+});
+
+volumeSlider.value = Math.round(masterVolume * 100);
+updateVolumeKnob();
+volumeMute.checked = masterVolumeMuted;
+updateTrayVolumeIcon();
+volumeSlider.oninput = () => {
+    masterVolume = Number(volumeSlider.value) / 100;
+    updateVolumeKnob();
+    if (masterGain) masterGain.gain.value = masterVolumeMuted ? 0 : masterVolume;
+    updateTrayVolumeIcon();
+};
+volumeMute.onchange = () => {
+    masterVolumeMuted = volumeMute.checked;
+    if (masterGain) masterGain.gain.value = masterVolumeMuted ? 0 : masterVolume;
+    updateTrayVolumeIcon();
+};
 
 // Settings
 document.getElementById("start-settings")?.addEventListener("click", () => {
