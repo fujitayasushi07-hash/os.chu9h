@@ -48,7 +48,7 @@
             .user-icon img {
                 width: 48px;
                 height: 48px;
-                image-rendering: pixelated;
+                image-rendering: auto;
             }
 
         .fields {
@@ -150,7 +150,7 @@
     <!-- LOGIN WINDOW -->
     <div class="window login-window" id="loginWindow">
         <div class="title-bar" id="loginTitle">
-            <div class="title-bar-text">Enter 404 Password</div>
+            <div class="title-bar-text">Enter CHOG Password</div>
             <div class="title-bar-controls">
                 <button aria-label="Help" id="helpBtn"></button>
                 <button aria-label="Close"></button>
@@ -204,51 +204,74 @@
 
     <script>
         /* =====================
-           DRAGGING (LOGIN) - Mouse + Touch support
-        ===================== */
-        function makeDraggable(windowEl, titleEl) {
-            let isDragging = false;
-            let offsetX = 0;
-            let offsetY = 0;
+   DRAGGING (LOGIN) - Mouse + Touch support
+===================== */
+function makeDraggable(windowEl, titleEl) {
+    let isDragging = false;
+    let offsetX = 0;
+    let offsetY = 0;
 
-            // Mouse events
-            titleEl.addEventListener("mousedown", (e) => {
-                isDragging = true;
-                offsetX = e.clientX - windowEl.offsetLeft;
-                offsetY = e.clientY - windowEl.offsetTop;
-            });
+    // Mouse events
+    titleEl.addEventListener("mousedown", (e) => {
+        e.preventDefault();
 
-            document.addEventListener("mousemove", (e) => {
-                if (!isDragging) return;
-                windowEl.style.left = e.clientX - offsetX + "px";
-                windowEl.style.top = e.clientY - offsetY + "px";
-            });
+        const rect = windowEl.getBoundingClientRect();
 
-            document.addEventListener("mouseup", () => {
-                isDragging = false;
-            });
-            
-            // Touch events for mobile
-            titleEl.addEventListener("touchstart", (e) => {
-                if (e.touches.length === 1) {
-                    isDragging = true;
-                    const touch = e.touches[0];
-                    offsetX = touch.clientX - windowEl.offsetLeft;
-                    offsetY = touch.clientY - windowEl.offsetTop;
-                }
-            }, { passive: true });
+        // Lock the window to its current screen position
+        windowEl.style.position = "fixed";
+        windowEl.style.left = rect.left + "px";
+        windowEl.style.top = rect.top + "px";
+        windowEl.style.transform = "none";
 
-            document.addEventListener("touchmove", (e) => {
-                if (!isDragging || e.touches.length !== 1) return;
-                const touch = e.touches[0];
-                windowEl.style.left = touch.clientX - offsetX + "px";
-                windowEl.style.top = touch.clientY - offsetY + "px";
-            }, { passive: true });
+        isDragging = true;
+        offsetX = e.clientX - rect.left;
+        offsetY = e.clientY - rect.top;
+    });
 
-            document.addEventListener("touchend", () => {
-                isDragging = false;
-            });
-        }
+    document.addEventListener("mousemove", (e) => {
+        if (!isDragging) return;
+
+        windowEl.style.left = e.clientX - offsetX + "px";
+        windowEl.style.top = e.clientY - offsetY + "px";
+    });
+
+    document.addEventListener("mouseup", () => {
+        isDragging = false;
+    });
+
+    // Touch events for mobile
+    titleEl.addEventListener("touchstart", (e) => {
+        if (e.touches.length !== 1) return;
+
+        const touch = e.touches[0];
+        const rect = windowEl.getBoundingClientRect();
+
+        // Lock the window to its current screen position
+        windowEl.style.position = "fixed";
+        windowEl.style.left = rect.left + "px";
+        windowEl.style.top = rect.top + "px";
+        windowEl.style.transform = "none";
+
+        isDragging = true;
+        offsetX = touch.clientX - rect.left;
+        offsetY = touch.clientY - rect.top;
+    }, { passive: false });
+
+    document.addEventListener("touchmove", (e) => {
+        if (!isDragging || e.touches.length !== 1) return;
+
+        e.preventDefault();
+
+        const touch = e.touches[0];
+
+        windowEl.style.left = touch.clientX - offsetX + "px";
+        windowEl.style.top = touch.clientY - offsetY + "px";
+    }, { passive: false });
+
+    document.addEventListener("touchend", () => {
+        isDragging = false;
+    });
+}
 
         makeDraggable(
             document.getElementById("loginWindow"),
@@ -263,7 +286,7 @@
         /* =====================
            LOGIN BUTTONS
         ===================== */
-        const validPasswords = ["1234", "gae", "404 password", "glitchybunnies", "404"];
+        const validPasswords = ["12345", "CHOG1234", "benga", "monad", "fujita",];
 
         document.getElementById("okBtn").addEventListener("click", () => {
             const passwordInput = document.getElementById("password");

@@ -98,7 +98,7 @@
         /* ===== MUSIC BUNNY (CLIPPY STYLE) ===== */
 #music-bunny {
     position: fixed;
-    bottom: 39px;
+    bottom: 33px;
     right: 12px;
     width: 160px;
     height: auto;
@@ -111,6 +111,33 @@
         opacity 0.35s ease-out,
         transform 0.35s cubic-bezier(0.2, 1.4, 0.4, 1),
         visibility 0s linear 0.35s;
+}
+
+#corrupt-bunny {
+    position: fixed;
+    bottom: 38px;
+    right: 40px;
+    width: 100px;
+    height: auto;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0;
+    transform: translateY(20px) scale(0.9);
+    visibility: hidden;
+    transition:
+        opacity 0.35s ease-out,
+        transform 0.35s cubic-bezier(0.2, 1.4, 0.4, 1),
+        visibility 0s linear 0.35s;
+}
+
+#corrupt-bunny.show {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    visibility: visible;
+    transition:
+        opacity 0.35s ease-out,
+        transform 0.35s cubic-bezier(0.2, 1.4, 0.4, 1),
+        visibility 0s;
 }
 
 /* ===== PIXEL SPEECH BUBBLE (LEFT OF BUNNY) ===== */
@@ -184,6 +211,13 @@
     image-rendering: pixelated;
 }
 
+#corrupt-bunny img {
+    width: 100%;
+    height: auto;
+    transform: rotate(6deg);
+    image-rendering: pixelated;
+}
+
 
         #start-button {
             display: flex;
@@ -200,8 +234,8 @@
             }
 
             #start-button img {
-                width: 16px;
-                height: 16px;
+                width: 24px;
+                height: 24px;
                 image-rendering: pixelated;
             }
 
@@ -241,14 +275,14 @@
 .mp-led {
     font-family: "PxPlus_IBM_VGA8", monospace;
     font-size: 14px;
-    color: #ffb347;
+    color: #ff8ad8;
     background: #000;
     padding: 4px 6px;
     border: inset 2px #808080;
     letter-spacing: 1px;
      text-shadow:
-        0 0 4px rgba(255, 170, 60, 0.7),
-        0 0 8px rgba(255, 120, 20, 0.5);
+        0 0 4px rgba(255, 138, 216, 0.7),
+        0 0 8px rgba(181, 34, 211, 0.5);
 }
 
 /* ===== CRT FLICKER + GLITCH ===== */
@@ -288,7 +322,7 @@
     background: linear-gradient(#0a0a0a, #111);
     border: 2px inset #808080;
     padding: 10px;
-    color: #00ff9c;
+    color: #e6b8ff;
     font-family: "PxPlus_IBM_VGA8", monospace;
 }
 
@@ -301,7 +335,7 @@
 .mp-title {
     font-size: 14px;
     letter-spacing: 1px;
-    color: #ffb347;
+    color: #ff8ad8;
     text-shadow: 0 0 4px #000;
 }
 
@@ -336,8 +370,8 @@
     width: 0%;
     background: linear-gradient(
         90deg,
-        rgba(255, 190, 90, 0.8),
-        rgba(255, 120, 20, 0.8)
+        rgba(175, 90, 255, 0.8),
+        rgba(181, 34, 211, 0.8)
     );
 }
 
@@ -733,7 +767,7 @@
     padding: 8px;
     background: url('assets/images/rabbit_main.bmp') no-repeat center;
     background-size: cover;
-    color: #00ff9c;
+    color: #e6b8ff;
     font-family: "PxPlus_IBM_VGA8", monospace;
 
     display: flex;
@@ -769,13 +803,13 @@
 
 /* Track title */
 #mp-track {
-    color: #7cffc9;
-    text-shadow: 0 0 2px #00ff9c;
+    color: #e6b8ff;
+    text-shadow: 0 0 2px #af5aff;
 }
 
 /* Time display */
 #mp-time {
-    color: #00ffaa;
+    color: #ff8ad8;
     margin-bottom: 6px;
 }
 
@@ -854,15 +888,15 @@
     padding-right: 16px; /* leave space so highlight doesn't underlap thumb */
     box-sizing: border-box;
     cursor: pointer;
-    color: rgba(255, 200, 120, 0.85);
+    color: rgba(230, 184, 255, 0.9);
 }
 
 .mp-track-item:hover {
-    background: rgba(255, 140, 40, 0.25);
+    background: rgba(175, 90, 255, 0.3);
 }
 
 .mp-track-item.active {
-    background: rgba(255, 140, 40, 0.4);
+    background: rgba(181, 34, 211, 0.55);
     color: #fff;
 }
 
@@ -881,10 +915,10 @@
 .mp-scroll-thumb {
     pointer-events: auto;
     width: 100%;
-    background: rgba(255, 140, 40, 0.95);
+    background: rgba(181, 34, 211, 0.95);
     border-radius: 3px;
     cursor: pointer;
-    box-shadow: 0 0 4px rgba(255,140,40,0.6);
+    box-shadow: 0 0 4px rgba(175, 90, 255, 0.6);
 }
 
 /* ===== MEDIA PLAYER WINDOW SKIN (FRAME) ===== */
@@ -922,6 +956,10 @@
 }
 
 #music-bunny.glitch {
+    animation: glitchShake 0.15s linear 2;
+}
+
+#corrupt-bunny.glitch {
     animation: glitchShake 0.15s linear 2;
 }
 
@@ -1220,6 +1258,12 @@
         right: 5px;
         bottom: 44px;
     }
+
+    #corrupt-bunny {
+        width: 110px;
+        right: 5px;
+        bottom: 32px;
+    }
     
     #bunny-bubble {
         right: 100px;
@@ -1268,6 +1312,11 @@
     
     /* Music bunny - still visible on small screens */
     #music-bunny {
+        width: 85px;
+        right: 3px;
+    }
+
+    #corrupt-bunny {
         width: 85px;
         right: 3px;
     }
@@ -1326,7 +1375,7 @@
 
         <!-- Quick Launch Icons -->
         <div id="quick-launch" style="display:flex;align-items:center;gap:4px;margin-left:6px;padding:0 6px;border-left:1px solid #808080;border-right:1px solid #fff;">
-            <img src="assets/images/mega.png" class="quick-launch-icon" id="ql-mega" title="MEGA" style="width:20px;height:20px;cursor:pointer;image-rendering:pixelated;">
+            <img src="assets/images/mega.png" class="quick-launch-icon" id="ql-mega" title="Monad" style="width:20px;height:20px;cursor:pointer;image-rendering:pixelated;">
             <img src="assets/images/discord.png" class="quick-launch-icon" id="ql-discord" title="Discord" style="width:20px;height:20px;cursor:pointer;image-rendering:pixelated;">
             <img src="assets/images/twitter.png" class="quick-launch-icon" id="ql-twitter" title="Twitter" style="width:20px;height:20px;cursor:pointer;image-rendering:pixelated;">
         </div>
@@ -1337,6 +1386,10 @@
 <div id="music-bunny">
     <div id="bunny-bubble"></div>
     <img src="assets/images/bunny-dance.gif" alt="Dancing Bunny">
+</div>
+
+<div id="corrupt-bunny">
+    <img src="assets/images/bunny-corrupt.gif" alt="Corrupted Bunny">
 </div>
 
 
@@ -1395,8 +1448,8 @@
     <!-- START MENU -->
     <div id="start-menu">
         <div class="start-menu-sidebar">
-            <span class="brand-light">404</span>
-            <span class="brand-bold">GLITCHWAVE</span>
+            <span class="brand-light">V0.1</span>
+            <span class="brand-bold">CHOGHWAVE</span>
         </div>
 
 
@@ -1493,7 +1546,6 @@ let bunnyCorrupted = false;
 const antivirusBalloon = document.getElementById("antivirus-balloon");
 
 
-const bunnyNormalSrc = "assets/images/bunny-dance.gif";
 const win98ErrorSound = new Audio("assets/sounds/win98-error.wav");
 win98ErrorSound.volume = 1;
 const win98CloseSound = new Audio("assets/sounds/close.wav");
@@ -1505,8 +1557,6 @@ shutOffSound.volume = 1;
 const logOffSound = new Audio("assets/sounds/log-off.wav");
 logOffSound.volume = 1;
 
-
-const bunnyCorruptSrc = "assets/images/bunny-corrupt.gif";
 
 const bunnyErrorSound = new Audio("assets/sounds/bunny-error.wav");
 bunnyErrorSound.volume = 1;
@@ -1552,29 +1602,14 @@ const bunnyMessages = [
         });
 
         const bunny = document.getElementById("music-bunny");
+const corruptBunny = document.getElementById("corrupt-bunny");
 const bubble = document.getElementById("bunny-bubble");
 let bubbleTimeout = null;
 
 bunny.style.pointerEvents = "auto";
+corruptBunny.style.pointerEvents = "auto";
 
 bunny.addEventListener("click", () => {
-
-    const bunnyImg = bunny.querySelector("img");
-
-    // If corrupted → play error sound
-    if (bunnyImg.src.includes("bunny-corrupt")) {
-        bunnyErrorSound.currentTime = 0;
-        bunny.classList.add("glitch");
-
-bunnyErrorSound.currentTime = 0;
-bunnyErrorSound.play().catch(() => {});
-
-setTimeout(() => {
-    bunny.classList.remove("glitch");
-}, 300);
-        return;
-    }
-
     // Normal bunny behavior below
     bunnyClickCount++;
 
@@ -1598,6 +1633,16 @@ setTimeout(() => {
             triggerFakeMalware();
         }, 2000);
     }
+});
+
+corruptBunny.addEventListener("click", () => {
+    bunnyErrorSound.currentTime = 0;
+    bunnyErrorSound.play().catch(() => {});
+    corruptBunny.classList.add("glitch");
+
+    setTimeout(() => {
+        corruptBunny.classList.remove("glitch");
+    }, 300);
 });
 
 
@@ -1647,7 +1692,7 @@ document
     .getElementById("open-twitter")
     ?.addEventListener("click", () => {
         window.open(
-            "https://x.com/404bunnies",
+            "https://x.com/ChogNFT",
             "_blank"
         );
 
@@ -1660,7 +1705,7 @@ document
     .getElementById("open-discord")
     ?.addEventListener("click", () => {
         window.open(
-            "https://discord.com/invite/glitchybunnies",
+            "https://discord.gg/chog",
             "_blank"
         );
 
@@ -1670,13 +1715,13 @@ document
 
 // Quick Launch Icons
 document.getElementById("ql-mega")?.addEventListener("click", () => {
-    window.open("https://x.com/megaeth", "_blank");
+    window.open("https://x.com/monad", "_blank");
 });
 document.getElementById("ql-discord")?.addEventListener("click", () => {
-    window.open("https://discord.com/invite/glitchybunnies", "_blank");
+    window.open("https://discord.gg/chog", "_blank");
 });
 document.getElementById("ql-twitter")?.addEventListener("click", () => {
-    window.open("https://x.com/404bunnies", "_blank");
+    window.open("https://x.com/ChogNFT", "_blank");
 });
 
 // Shut Down
@@ -1928,7 +1973,7 @@ function openMusicPlayer() {
     <div class="mp-shell">
 
     <div class="mp-header">
-        <span class="mp-title">GLITCHYBUNNIES PLAYER</span>
+        <span class="mp-title">CHOGWORLD PLAYER 2000</span>
         <span class="mp-sub mp-led mp-led-small" id="mp-track-name">No Track Loaded</span>
     </div>
 
@@ -2113,7 +2158,7 @@ playlistItems.forEach((item, index) => {
         
         audioCtx.resume();
         musicAudio.play();
-        document.getElementById("music-bunny").classList.add("show");
+        if (!bunnyCorrupted) bunny.classList.add("show");
         startVisualizer();
     });
 });
@@ -2273,7 +2318,7 @@ musicAudio.addEventListener("ended", () => {
     // Keep visualizer alive
     startVisualizer();
     // Keep bunny visible since music is still playing
-    document.getElementById("music-bunny").classList.add("show");
+    if (!bunnyCorrupted) bunny.classList.add("show");
 });
 
 
@@ -2294,7 +2339,7 @@ musicAudio.addEventListener("ended", () => {
 
     audioCtx.resume();
     musicAudio.play();
-    document.getElementById("music-bunny").classList.add("show");
+    if (!bunnyCorrupted) bunny.classList.add("show");
 
     startVisualizer();
 };
@@ -2303,11 +2348,7 @@ musicAudio.addEventListener("ended", () => {
     musicPlayerWindow.querySelector("#mp-pause").onclick = () => {
     musicAudio.pause();
     
-    // Only hide bunny if NOT corrupted
-    const bunnyImg = document.querySelector("#music-bunny img");
-    if (!bunnyImg.src.includes("bunny-corrupt")) {
-        document.getElementById("music-bunny").classList.remove("show");
-    }
+    bunny.classList.remove("show");
 
     visualizerRunning = false;
     if (visualizerRAF) cancelAnimationFrame(visualizerRAF);
@@ -2318,11 +2359,7 @@ musicAudio.addEventListener("ended", () => {
     musicAudio.pause();
     musicAudio.currentTime = 0;
     
-    // Only hide bunny if NOT corrupted
-    const bunnyImg = document.querySelector("#music-bunny img");
-    if (!bunnyImg.src.includes("bunny-corrupt")) {
-        document.getElementById("music-bunny").classList.remove("show");
-    }
+    bunny.classList.remove("show");
 
     isStopping = true;
     if (!visualizerRunning) {
@@ -2351,7 +2388,7 @@ musicPlayerWindow.querySelector("#mp-prev").onclick = () => {
     
     audioCtx.resume();
     musicAudio.play();
-    document.getElementById("music-bunny").classList.add("show");
+    if (!bunnyCorrupted) bunny.classList.add("show");
     startVisualizer();
 };
 
@@ -2374,7 +2411,7 @@ musicPlayerWindow.querySelector("#mp-next").onclick = () => {
     
     audioCtx.resume();
     musicAudio.play();
-    document.getElementById("music-bunny").classList.add("show");
+    if (!bunnyCorrupted) bunny.classList.add("show");
     startVisualizer();
 };
 
@@ -2457,11 +2494,7 @@ musicPlayerWindow
         musicAudio.pause();
         musicAudio.currentTime = 0;
         
-        // Only hide bunny if NOT corrupted
-        const bunnyImg = document.querySelector("#music-bunny img");
-        if (!bunnyImg.src.includes("bunny-corrupt")) {
-            document.getElementById("music-bunny").classList.remove("show");
-        }
+        bunny.classList.remove("show");
 
         visualizerRunning = false;
         if (visualizerRAF) cancelAnimationFrame(visualizerRAF);
@@ -2582,12 +2615,12 @@ const barGradient = ctx.createLinearGradient(
     canvas.height
 );
 
-barGradient.addColorStop(0, "rgba(255, 200, 120, 0.75)");
-barGradient.addColorStop(0.6, "rgba(255, 150, 50, 0.6)");
-barGradient.addColorStop(1, "rgba(200, 80, 10, 0.45)");
+barGradient.addColorStop(0, "rgba(255, 125, 205, 0.9)");
+barGradient.addColorStop(0.45, "rgba(145, 65, 210, 0.9)");
+barGradient.addColorStop(1, "rgba(65, 30, 130, 0.95)");
 
 ctx.fillStyle = barGradient;
-ctx.shadowColor = "rgba(255, 140, 40, 0.8)";
+ctx.shadowColor = "rgba(180, 70, 220, 0.7)";
 ctx.shadowBlur = 4;
 
 
@@ -2668,7 +2701,7 @@ function formatTime(seconds) {
 
         function triggerFakeMalware() {
     const bunny = document.getElementById("music-bunny");
-    const bunnyImg = bunny.querySelector("img");
+            const corruptBunny = document.getElementById("corrupt-bunny");
 
     // Hide bunny immediately
     bunny.classList.remove("show");
@@ -2714,7 +2747,6 @@ function formatTime(seconds) {
             setTimeout(() => {
                 dl.remove();
 
-                bunnyImg.src = bunnyCorruptSrc;
                 bunnyCorrupted = true;
 
                 setTimeout(() => {
@@ -2752,14 +2784,14 @@ function formatTime(seconds) {
                 }, 8000);
 
                 // Clear any inline styles so CSS classes take over
-                bunny.style.opacity = "";
-                bunny.style.transform = "";
-                bunny.style.visibility = "";
+                corruptBunny.style.opacity = "";
+                corruptBunny.style.transform = "";
+                corruptBunny.style.visibility = "";
 
                 // Force reflow
-                void bunny.offsetHeight;
+                void corruptBunny.offsetHeight;
 
-                bunny.classList.add("show");
+                corruptBunny.classList.add("show");
             }, 800);
         }
     }, 80);
@@ -3186,22 +3218,155 @@ function openImageViewer(filename, src) {
 function openClipArtGallery() {
     const galleryId = "gallery-" + Date.now();
     
-    // All images from glitchy-art folder
+    // All images from chog-library folder
     const clipArtImages = [
-        "G-UCH2PWYAAHPgi.jpg", "G043hltWEAAgniA.jpg", "G0fZzulWIAAM0-R.jpg", "G0ost57WkAApZrq.jpg",
-        "G1CHsc_XcAARrvs.jpg", "G2-6LGyXwAAb2UT.jpg", "G20uJslWEAA3aOZ.jpg", "G2AwMSYWkAAtxFx.jpg",
-        "G2gnhxEXwAAu3DH.jpg", "G2LdTOMWoAA8Wg6.jpg", "G2lfkh-XAAAph4O.jpg", "G2qyMMpWsAAdTOf.jpg",
-        "G2Wg3WAXsAA4VTv.jpg", "G30JaF1WIAAiqbt.jpg", "G3owxQxW4AAObD1.jpg", "G3y39NNXgAAAUVD.jpg",
-        "G47yetBXIAALsyF.jpg", "G4C-21cXgAAJIKe.jpg", "G4cq2CPXcAAPi7d.jpg", "G4hnueaWUAAHJH7.jpg",
-        "G4mmutzWUAAm-qh.jpg", "G4XOyTcWMAAxj6W.jpg", "G5AtxEyWEAAtHpe.jpg", "G5aXOzSWQAAwARL.jpg",
-        "G6DbFLQXUAAJuN3.jpg", "G6Hbr9hW4AAAbnY.jpg", "G6nU7usWcAAANwC.jpg", "G74azxabIAEYxwE.jpg",
-        "G7bAam-XQAEvYd7.jpg", "G7GYu32WsAA1WO9.jpg", "G7voHqhXMAAWCXZ.jpg", "G88b-wkXQAA1PEX.jpg",
-        "G8d0YsLWUAAIj_l.jpg", "G9hIFIFW0AAIvoc.jpg", "GyfkXs1WoAAtbt7.jpg", "Gyo0uKIWUAAytpA.jpg",
-        "GyZOdiHXcAAU9wS.jpg", "GyzY2qYXYAEhJdt.jpg", "GzcZTS2WoAA6071.jpg", "G-dyniRbsAAgQ_6.jpeg", 
-        "20260119_012535.jpg", "AE10766E-295B-44D9-9F57-25F4ED5A9C73.jpg", "ba7e3d86-06f2-4d2d-b279-5d7f04c09622.jpeg",
-        "G9fczulWIAAM0-R.jpg",
+        "photo_5125584907462707977_y.jpg",
+        "photo_5764771969198313007_y.jpg",
+        "photo_5775934361567349420_y.jpg",
+        "photo_5782821217072433614_y.jpg",
+        "photo_5782821217072433621_y.jpg",
+        "photo_5782821217072433625_y.jpg",
+        "photo_5782821217072433627_y.jpg",
+        "photo_5782821217072433638_y.jpg",
+        "photo_6053114044568242966_y.jpg",
+        "photo_6059786314913533173_y.jpg",
+        "photo_6061996024047717777_y.jpg",
+        "photo_6061996024047717808_y.jpg",
+        "photo_6066465667663644547_y.jpg",
+        "photo_6066465667663644787_y.jpg",
+        "photo_6068929252314697134_y.jpg",
+        "photo_6114011737314411577_x.jpg",
+        "photo_6114011737314411580_y.jpg",
+        "photo_6118245754729515229_x.jpg",
+        "photo_6118245754729515347_y.jpg",
+        "photo_6118668061683861089_x.jpg",
+        "photo_6120497554543199553_y.jpg",
+        "photo_6122749354356886340_y.jpg",
+        "photo_6131711598188938540_y.jpg",
+        "photo_6134457598414537674_y.jpg",
+        "photo_6134457598414537844_y.jpg",
+        "photo_6141164365940901582_y.jpg",
+        "photo_6143430961916921992_x.jpg",
+        "photo_6143430961916921997_y.jpg",
+        "photo_6143430961916922140_y.jpg",
+        "photo_6143430961916922141_y.jpg",
+        "photo_6143430961916922142_y.jpg",
+        "photo_6149728775542261540_y.jpg",
+        "photo_6149728775542261541_y.jpg",
+        "photo_6156647263481480116_y.jpg",
+        "photo_6161079785695071229_y.jpg",
+        "photo_6161079785695071281_y.jpg",
+        "photo_6161079785695071292_y.jpg",
+        "photo_6161079785695071297_y.jpg",
+        "photo_6161079785695071311_y.jpg",
+        "photo_6161079785695071319_y.jpg",
+        "photo_6161079785695071344_y.jpg",
+        "photo_6161079785695071355_y.jpg",
+        "photo_6161079785695071417_y.jpg",
+        "photo_6161079785695071425_y.jpg",
+        "photo_6168190082578761798_y.jpg",
+        "photo_6174450925125618634_y.jpg",
+        "photo_6210816340206406556_y.jpg",
+        "photo_6217531590293178499_y.jpg",
+        "photo_6217531590293178511_y.jpg",
+        "photo_6217531590293178551_x.jpg",
+        "photo_6217531590293178552_x.jpg",
+        "photo_6217531590293178557_y.jpg",
+        "photo_6217531590293178561_y.jpg",
+        "photo_6217531590293178573_y.jpg",
+        "photo_6217531590293178577_y.jpg",
+        "photo_6217531590293178643_y.jpg",
+        "photo_6237801340554299740_y.jpg",
+        "photo_6237801340554299741_y.jpg",
+        "photo_6242164357312137919_y.jpg",
+        "photo_6242164357312137937_y.jpg",
+        "photo_6242164357312137975_y.jpg",
+        "photo_6242164357312137979_y.jpg",
+        "photo_6242164357312137986_y.jpg",
+        "photo_6242164357312137993_y.jpg",
+        "photo_6242164357312137998_y.jpg",
+        "photo_6246632270056247928_y.jpg",
+        "photo_6246632270056247940_y.jpg",
+        "photo_6248884069869932017_y.jpg",
+        "photo_6248884069869932025_y.jpg",
+        "photo_6248884069869932028_y.jpg",
+        "photo_6248884069869932042_y.jpg",
+        "photo_6253272109107234333_w.jpg",
+        "photo_6253272109107234364_y.jpg",
+        "photo_6253272109107234369_y.jpg",
+        "photo_6255523908920923517_y.jpg",
+        "photo_6255523908920923521_y.jpg",
+        "photo_6271405289236008287_y.jpg",
+        "photo_6273923591770410306_y.jpg",
+        "photo_6273923591770410322_x.jpg",
+        "photo_6273923591770410328_x.jpg",
+        "photo_6273923591770410340_y.jpg",
+        "photo_6276175391584094977_y.jpg",
+        "photo_6280717783356083102_y.jpg",
+        "photo_6280717783356083108_y.jpg",
+        "photo_6280717783356083111_y.jpg",
+        "photo_6282532651851779119_y.jpg",
+        "photo_6282532651851779126_y.jpg",
+        "photo_6282532651851779132_y.jpg",
+        "photo_6282532651851779284_y.jpg",
+        "photo_6287265748761643798_y.jpg",
+        "photo_6287265748761643817_y.jpg",
+        "photo_6287265748761643825_y.jpg",
+        "photo_6287265748761643839_y.jpg",
+        "photo_6287265748761643846_y.jpg",
+        "photo_6287265748761643869_y.jpg",
+        "photo_6289517548575329215_y.jpg",
+        "photo_6289517548575329221_y.jpg",
+        "photo_6289517548575329234_x.jpg",
+        "photo_6289517548575329240_y.jpg",
+        "photo_6289517548575329243_y.jpg",
+        "photo_6289517548575329244_y.jpg",
+        "photo_6289517548575329259_y.jpg",
+        "photo_6294269594880904088_y.jpg",
+        "photo_6294269594880904096_y.jpg",
+        "photo_6294269594880904130_y.jpg",
+        "photo_6294269594880904132_y.jpg",
+        "photo_6294269594880904155_y.jpg",
+        "photo_6294269594880904156_y.jpg",
+        "photo_6294269594880904166_y.jpg",
+        "photo_6298652828049805025_y.jpg",
+        "photo_6298652828049805053_y.jpg",
+        "photo_6298652828049805069_y.jpg",
+        "photo_6298652828049805082_y.jpg",
+        "photo_6298652828049805089_y.jpg",
+        "photo_6298652828049805094_y.jpg",
+        "photo_6298652828049805102_y.jpg",
+        "photo_6321306572923014270_x.jpg",
+        "photo_6321306572923014319_x.jpg",
+        "photo_6321306572923014395_x.jpg",
+        "photo_6321306572923014404_x.jpg",
+        "photo_6321306572923014408_x.jpg",
+        "photo_6321306572923014427_x.jpg",
+        "photo_6321306572923014429_x.jpg",
+        "photo_6321306572923014440_x.jpg",
+        "photo_6321306572923014441_x.jpg",
+        "photo_6321306572923014445_x.jpg",
+        "photo_6321306572923014458_x.jpg",
+        "photo_6321306572923014479_x.jpg",
+        "photo_6321306572923014532_x.jpg",
+        "photo_6321306572923014586_x.jpg",
+        "photo_6321306572923014587_x.jpg",
+        "photo_6321306572923014593_x.jpg",
+        "photo_6321306572923014652_x.jpg",
+        "photo_6321306572923014680_x.jpg",
+        "photo_6321306572923014697_x.jpg",
+        "photo_6321306572923014733_x.jpg",
+        "photo_6330003520920161317_x.jpg",
+        "photo_6330003520920161318_x.jpg",
+        "photo_6330003520920161437_x.jpg",
+        "photo_6338984623949859042_y.jpg",
+        "photo_6338984623949859044_y.jpg",
+        "photo_6338984623949859060_y.jpg",
+        "photo_6338984623949859068_x.jpg",
+        "photo_6338984623949859069_m.jpg",
+        "photo_6339314473146977698_y.jpg",
+        "photo_6339314473146977708_y.jpg",
     ];
-    
     const win = openWindow("Insert ClipArt", `
         <div class="clipart-gallery" data-gallery-id="${galleryId}" style="display:flex;flex-direction:column;height:100%;background:#c0c0c0;">
             <!-- Toolbar -->
@@ -3240,14 +3405,14 @@ function openClipArtGallery() {
             
             <!-- Category Label -->
             <div style="padding:4px 8px;background:#fff;font-size:11px;border-bottom:1px solid #c0c0c0;">
-                Clips 1 - ${clipArtImages.length} in Glitchy Art Collection
+                Clips 1 - ${clipArtImages.length} in Chog Library
             </div>
             
             <!-- Clip Art Grid -->
             <div class="clipart-grid" style="flex:1;overflow:auto;background:#fff;padding:8px;display:grid;grid-template-columns:repeat(auto-fill, 90px);gap:8px;align-content:start;">
                 ${clipArtImages.map((img, i) => `
-                    <div class="clipart-item" data-src="assets/glitchy-art/${img}" style="width:85px;height:85px;border:1px solid #c0c0c0;display:flex;align-items:center;justify-content:center;cursor:pointer;background:#fff;">
-                        <img src="assets/glitchy-art/${img}" style="max-width:80px;max-height:80px;object-fit:contain;">
+                    <div class="clipart-item" data-src="assets/chog-library/${img}" style="width:85px;height:85px;border:1px solid #c0c0c0;display:flex;align-items:center;justify-content:center;cursor:pointer;background:#fff;">
+                        <img src="assets/chog-library/${img}" style="max-width:80px;max-height:80px;object-fit:contain;">
                     </div>
                 `).join('')}
             </div>
@@ -3570,11 +3735,11 @@ function playBalloonVideo() {
 // When video ends, cure the virus and reset everything
 balloonVideo.addEventListener("ended", () => {
     const bunny = document.getElementById("music-bunny");
-    const bunnyImg = document.querySelector("#music-bunny img");
+    const corruptBunny = document.getElementById("corrupt-bunny");
     
-    // Apply glitch fade-out to both video window and bunny
+    // Apply glitch fade-out to both video window and corrupted bunny
     videoWindow.classList.add("glitch-fade-out");
-    bunny.classList.add("glitch-fade-out");
+    corruptBunny.classList.add("glitch-fade-out");
     
     // After animation completes, reset everything
     setTimeout(() => {
@@ -3582,9 +3747,8 @@ balloonVideo.addEventListener("ended", () => {
         balloonVideoOverlay.classList.remove("show");
         videoWindow.classList.remove("glitch-fade-out");
         
-        // Reset bunny to normal
-        bunny.classList.remove("glitch-fade-out", "show");
-        bunnyImg.src = bunnyNormalSrc;
+        corruptBunny.classList.remove("glitch-fade-out", "show");
+        bunny.classList.remove("show");
         bunnyCorrupted = false;
         bunnyClickCount = 0;
         

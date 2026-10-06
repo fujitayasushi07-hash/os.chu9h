@@ -14,7 +14,7 @@ function resize() {
 window.addEventListener("resize", resize);
 resize();
 
-const stars = Array.from({ length: 140 }, () => ({
+const stars = Array.from({ length: 169 }, () => ({
     x: Math.random() * canvas.width,
     y: Math.random() * canvas.height,
     s: Math.random() * 2 + 0.3,
@@ -110,21 +110,25 @@ async function numberRun(label, max) {
         sound.play().catch(() => { });
     }
 
-    addLine("GLITCHYBUNNIES BOIS V0.01.");
+    addLine("CHOG BIOS V0.01.");
     await wait(200);
+
     addLine("A Curated Digital Anomaly.");
     await wait(200);
-    addLine("Copyright (c) 2001–2026 GlitchyBunnies Collective.");
+
+    addLine("Copyright (c) 2001–2026 CHOG Collective.");
     await wait(300);
+
     addLine("");
 
-    addLine("GlitchCore™ Soft Processor");
+    addLine("CHOGCore™ Soft Processor");
     await wait(200);
-    addLine("404 8088 MHZ: Unstable");
+
+    addLine("13 69000 MHZ: Unstable");
     await wait(300);
 
     await loadingLine(
-        "MEGAETH ≤ Interface: ",
+        "MONAD < Interface: ",
         ["Checking", "Initializing", "Retrying", "Finalizing"],
         "Detected"
     );
@@ -149,26 +153,25 @@ async function numberRun(label, max) {
         "0K"
     );
 
+   addLine("CHOG Signal: > 1969 OK");
+await wait(200);
 
-    await numberRun("Autism Signal: > ", 4404);
-
-    await loadingLine(
-        "Detecting Pattern Fixation: ",
-        [
-            "Scanning",
-            "Error",
-            "Retrying Scan",
-            "Indexing Patterns",
-            "Finalizing"
-        ],
-        "0K"
-    );
-
+await loadingLine(
+    "Detecting Pattern Fixation: ",
+    [
+        "Scanning",
+        "Error",
+        "Retrying Scan",
+        "Indexing Patterns",
+        "Finalizing"
+    ],
+    "OK"
+);
 
     addLine("");
 
     await loadingLine(
-        "Initializing bunnies.exe: ",
+        "Initializing chog.exe: ",
         [
             "Loading",
             "Resolving Dependencies",
@@ -178,11 +181,9 @@ async function numberRun(label, max) {
         "0K"
     );
 
-
     addLine("");
     enterHint.classList.remove("hidden");
     startCountdown();
-
 
 })();
 
@@ -214,7 +215,7 @@ function continueToLogin(playSound) {
     }
 
     setTimeout(() => {
-        window.location.href = "excalibur/index.html";
+        window.location.href = "login.html";
     }, playSound ? 700 : 0);
 }
 
@@ -257,5 +258,3 @@ document.addEventListener("touchend", e => {
         continueToLogin(true); // SOUND PLAYS
     }
 });
-
-
