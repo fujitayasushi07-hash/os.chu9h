@@ -2631,35 +2631,62 @@ function openChogFinance() {
     }
     
     // Load NFTs from GoldRush
+    // Chog Genesis NFT contract on Monad
+    const CHOG_GENESIS_NFT_CONTRACT = '0xc96d31f8626c6d03fae5dcd3d61e3fb9f4a73763';
+    
     async function loadNFTs(address) {
         try {
             const nftContentDiv = contentArea.querySelector('#nft-content');
             const response = await fetch('/api/wallet/nfts?address=' + encodeURIComponent(address));
             const data = await response.json();
             
-            if (data.success && data.nfts && data.nfts.length > 0) {
-                const chogNFTs = data.nfts.filter(nft => 
-                    nft.contractName && nft.contractName.toLowerCase().includes('chog')
-                );
+            // Handle provider errors
+            if (!data.success) {
+                console.error('NFT API error:', data.error, 'Status:', data.status);
                 
-                if (chogNFTs.length > 0) {
-                    let nftHTML = '<div style="margin-bottom:12px;"><strong>Chog NFTs:</strong></div>';
-                    chogNFTs.forEach((nft, idx) => {
-                        nftHTML += `<div style="margin-bottom:8px;padding:8px;background:#f0f0f0;border:1px solid #ccc;cursor:pointer;" onclick="alert('NFT #` + nft.tokenId + ` - Diagnostics coming in Phase 4.1')">
-                            <div><strong>Chog #` + nft.tokenId + `</strong></div>
+                if (data.status === 'provider_error') {
+                    nftContentDiv.innerHTML = '<div style="font-size:10px;color:#c00;">NFT provider unavailable: ' + (data.error || 'Unknown error') + '</div>';
+                } else if (data.status === 'error') {
+                    nftContentDiv.innerHTML = '<div style="font-size:10px;color:#c00;">Error loading NFTs: ' + (data.error || 'Unknown error') + '</div>';
+                } else {
+                    nftContentDiv.innerHTML = '<div style="font-size:10px;color:#c00;">Failed to load NFTs.</div>';
+                }
+                return;
+            }
+            
+            // Provider succeeded - check if wallet has Chog Genesis NFTs
+            if (data.nfts && data.nfts.length > 0) {
+                // Filter for Chog Genesis contract - exact address match, case-insensitive
+                const chogGenesisNFTs = data.nfts.filter(nft => {
+                    const contractAddr = (nft.contract || '').toLowerCase();
+                    const chogAddr = CHOG_GENESIS_NFT_CONTRACT.toLowerCase();
+                    return contractAddr === chogAddr;
+                });
+                
+                if (chogGenesisNFTs.length > 0) {
+                    console.log('Found', chogGenesisNFTs.length, 'Chog Genesis NFT(s)');
+                    let nftHTML = '<div style="margin-bottom:12px;"><strong>Chog Genesis NFTs (' + chogGenesisNFTs.length + '):</strong></div>';
+                    chogGenesisNFTs.forEach((nft, idx) => {
+                        nftHTML += `<div style="margin-bottom:8px;padding:8px;background:#f0f0f0;border:1px solid #ccc;cursor:pointer;" onclick="alert('NFT #` + nft.tokenId + ` - Metadata coming soon')">
+                            <div><strong>Chog Genesis #` + nft.tokenId + `</strong></div>
                             <div style="font-size:9px;color:#666;">Contract: ` + nft.contract.substring(0, 10) + `...</div>
+                            <div style="font-size:9px;color:#666;">Type: ` + nft.type + `</div>
                         </div>`;
                     });
                     nftContentDiv.innerHTML = nftHTML;
                 } else {
-                    nftContentDiv.innerHTML = '<div style="font-size:10px;color:#666;">No Chog NFTs found in this wallet.</div>';
+                    console.log('No Chog Genesis NFTs found (API returned', data.nfts.length, 'other NFT contract(s))');
+                    nftContentDiv.innerHTML = '<div style="font-size:10px;color:#666;">This wallet does not own any Chog Genesis NFTs.</div>';
                 }
             } else {
-                nftContentDiv.innerHTML = '<div style="font-size:10px;color:#666;">No NFT data available.</div>';
+                // API succeeded but returned no NFTs
+                console.log('No NFT contracts found in wallet');
+                nftContentDiv.innerHTML = '<div style="font-size:10px;color:#666;">No NFTs found in this wallet.</div>';
             }
         } catch (err) {
+            console.error('NFT loading exception:', err);
             const nftContentDiv = contentArea.querySelector('#nft-content');
-            nftContentDiv.innerHTML = '<div style="font-size:10px;color:#c00;">Error loading NFTs.</div>';
+            nftContentDiv.innerHTML = '<div style="font-size:10px;color:#c00;">Exception loading NFTs: ' + err.message + '</div>';
         }
     }
     
