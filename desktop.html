@@ -2210,10 +2210,21 @@ function openChogFinance() {
                     <div style="font-size:11px;font-weight:bold;margin-bottom:8px;color:#000;">WALLET INSPECTOR</div>
                     
                     <div style="margin-bottom:8px;">
-                        <input type="text" placeholder="Enter Monad wallet address..." style="width:100%;padding:4px 6px;font-size:11px;box-sizing:border-box;border:inset 1px #808080;font-family:monospace;">
+                        <input type="text" id="chog-wallet-address" placeholder="Enter Monad wallet address..." style="width:100%;padding:4px 6px;font-size:11px;box-sizing:border-box;border:inset 1px #808080;font-family:monospace;">
                     </div>
                     
-                    <button style="padding:4px 12px;font-size:11px;margin-bottom:12px;cursor:pointer;">INSPECT WALLET</button>
+                    <button id="chog-inspect-btn" style="padding:4px 12px;font-size:11px;margin-bottom:12px;cursor:pointer;">INSPECT WALLET</button>
+                    
+                    <div id="chog-loading" style="display:none;font-size:10px;color:#666;margin-bottom:8px;">
+                        Loading...
+                    </div>
+                    
+                    <div id="chog-error" style="display:none;font-size:10px;color:#c00;margin-bottom:8px;padding:6px;background:#fee;border:1px solid #c00;"></div>
+                    
+                    <div id="chog-balance-result" style="display:none;font-size:11px;color:#000;margin-bottom:8px;padding:8px;background:#efe;border:1px solid #0c0;">
+                        <div style="font-weight:bold;margin-bottom:4px;">Balance:</div>
+                        <div style="font-size:13px;font-family:monospace;"><span id="chog-balance-value">0</span> MON</div>
+                    </div>
                     
                     <div style="font-size:10px;color:#333;line-height:1.4;margin-bottom:8px;">
                         Read-only wallet inspection. No wallet connection required.
@@ -2222,7 +2233,7 @@ function openChogFinance() {
                 
                 <div style="border:inset 1px #808080;padding:8px;background:#fff;margin-bottom:12px;">
                     <div style="font-size:11px;color:#000;margin-bottom:4px;"><strong>Network:</strong> Monad</div>
-                    <div style="font-size:11px;color:#000;"><strong>Status:</strong> Ready</div>
+                    <div style="font-size:11px;color:#000;"><strong>Status:</strong> <span id="chog-status">Ready</span></div>
                 </div>
             </div>
             
@@ -2230,7 +2241,63 @@ function openChogFinance() {
         </div>
     `;
     
-    openWindow("CHOG Finance", html, "assets/images/documents.png");
+    const win = openWindow("CHOG Finance", html, "assets/images/documents.png");
+    
+    // Wire up the inspect button
+    const inspectBtn = win.querySelector('#chog-inspect-btn');
+    const walletInput = win.querySelector('#chog-wallet-address');
+    const loadingEl = win.querySelector('#chog-loading');
+    const errorEl = win.querySelector('#chog-error');
+    const balanceResultEl = win.querySelector('#chog-balance-result');
+    const balanceValueEl = win.querySelector('#chog-balance-value');
+    const statusEl = win.querySelector('#chog-status');
+    
+    inspectBtn.addEventListener('click', async () => {
+        const address = walletInput.value.trim();
+        
+        // Clear previous results
+        errorEl.style.display = 'none';
+        balanceResultEl.style.display = 'none';
+        loadingEl.style.display = 'none';
+        statusEl.textContent = 'Ready';
+        
+        // Validate address exists
+        if (!address) {
+            errorEl.textContent = 'Please enter a wallet address';
+            errorEl.style.display = 'block';
+            statusEl.textContent = 'Error';
+            return;
+        }
+        
+        // Show loading state
+        loadingEl.style.display = 'block';
+        inspectBtn.disabled = true;
+        statusEl.textContent = 'Inspecting...';
+        
+        try {
+            const response = await fetch(`/api/wallet/balance?address=${encodeURIComponent(address)}`);
+            const data = await response.json();
+            
+            loadingEl.style.display = 'none';
+            
+            if (!response.ok || !data.success) {
+                errorEl.textContent = data.error || 'Failed to fetch balance';
+                errorEl.style.display = 'block';
+                statusEl.textContent = 'Error';
+            } else {
+                balanceValueEl.textContent = data.balance;
+                balanceResultEl.style.display = 'block';
+                statusEl.textContent = 'Wallet inspected';
+            }
+        } catch (err) {
+            loadingEl.style.display = 'none';
+            errorEl.textContent = 'Network error: Could not reach API';
+            errorEl.style.display = 'block';
+            statusEl.textContent = 'Error';
+        } finally {
+            inspectBtn.disabled = false;
+        }
+    });
 }
 
 /* ===== MUSIC PLAYER (PHASE 1: DUMMY WINDOW) ===== */
