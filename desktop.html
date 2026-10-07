@@ -2222,8 +2222,24 @@ function openChogFinance() {
                     <div id="chog-error" style="display:none;font-size:10px;color:#c00;margin-bottom:8px;padding:6px;background:#fee;border:1px solid #c00;"></div>
                     
                     <div id="chog-balance-result" style="display:none;font-size:11px;color:#000;margin-bottom:8px;padding:8px;background:#efe;border:1px solid #0c0;">
-                        <div style="font-weight:bold;margin-bottom:4px;">Balance:</div>
+                        <div style="font-weight:bold;margin-bottom:4px;">Native Balance:</div>
                         <div style="font-size:13px;font-family:monospace;"><span id="chog-balance-value">0</span> MON</div>
+                    </div>
+                    
+                    <div id="chog-tokens-result" style="display:none;font-size:11px;color:#000;margin-bottom:8px;padding:8px;background:#efe;border:1px solid #0c0;">
+                        <div style="font-weight:bold;margin-bottom:6px;">Token Holdings:</div>
+                        <table id="chog-tokens-table" style="width:100%;border-collapse:collapse;font-size:10px;">
+                            <thead>
+                                <tr style="border-bottom:1px solid #0c0;">
+                                    <th style="text-align:left;padding:2px;border-right:1px solid #ddd;">Symbol</th>
+                                    <th style="text-align:right;padding:2px;border-right:1px solid #ddd;">Balance</th>
+                                    <th style="text-align:right;padding:2px;">USD Value</th>
+                                </tr>
+                            </thead>
+                            <tbody id="chog-tokens-body">
+                            </tbody>
+                        </table>
+                        <div id="chog-tokens-empty" style="font-size:10px;color:#666;margin-top:4px;">No token holdings</div>
                     </div>
                     
                     <div style="font-size:10px;color:#333;line-height:1.4;margin-bottom:8px;">
@@ -2237,7 +2253,7 @@ function openChogFinance() {
                 </div>
             </div>
             
-            <div class="status-bar" style="font-size:11px;color:#000;">CHOG Finance v0.1</div>
+            <div class="status-bar" style="font-size:11px;color:#000;">CHOG Finance v0.2</div>
         </div>
     `;
     
@@ -2250,6 +2266,9 @@ function openChogFinance() {
     const errorEl = win.querySelector('#chog-error');
     const balanceResultEl = win.querySelector('#chog-balance-result');
     const balanceValueEl = win.querySelector('#chog-balance-value');
+    const tokensResultEl = win.querySelector('#chog-tokens-result');
+    const tokensTableBody = win.querySelector('#chog-tokens-body');
+    const tokensEmptyEl = win.querySelector('#chog-tokens-empty');
     const statusEl = win.querySelector('#chog-status');
     
     inspectBtn.addEventListener('click', async () => {
@@ -2258,6 +2277,8 @@ function openChogFinance() {
         // Clear previous results
         errorEl.style.display = 'none';
         balanceResultEl.style.display = 'none';
+        tokensResultEl.style.display = 'none';
+        tokensTableBody.innerHTML = '';
         loadingEl.style.display = 'none';
         statusEl.textContent = 'Ready';
         
@@ -2275,20 +2296,45 @@ function openChogFinance() {
         statusEl.textContent = 'Inspecting...';
         
         try {
-            const response = await fetch(`/api/wallet/balance?address=${encodeURIComponent(address)}`);
-            const data = await response.json();
+            // Fetch both balance and tokens in parallel
+            const balanceResp = await fetch('/api/wallet/balance?address=' + encodeURIComponent(address));
+            const tokensResp = await fetch('/api/wallet/tokens?address=' + encodeURIComponent(address));
+            
+            const balanceData = await balanceResp.json();
+            const tokensData = await tokensResp.json();
             
             loadingEl.style.display = 'none';
             
-            if (!response.ok || !data.success) {
-                errorEl.textContent = data.error || 'Failed to fetch balance';
+            // Check if either request failed
+            if (!balanceResp.ok || !balanceData.success) {
+                errorEl.textContent = balanceData.error || 'Failed to fetch wallet data';
                 errorEl.style.display = 'block';
                 statusEl.textContent = 'Error';
-            } else {
-                balanceValueEl.textContent = data.balance;
-                balanceResultEl.style.display = 'block';
-                statusEl.textContent = 'Wallet inspected';
+                return;
             }
+            
+            // Display native balance
+            balanceValueEl.textContent = balanceData.balance;
+            balanceResultEl.style.display = 'block';
+            
+            // Display token holdings if tokens exist
+            if (tokensResp.ok && tokensData.success && tokensData.tokens && tokensData.tokens.length > 0) {
+                tokensEmptyEl.style.display = 'none';
+                tokensData.tokens.forEach(token => {
+                    const row = document.createElement('tr');
+                    row.style.borderBottom = '1px solid #ddd';
+                    row.innerHTML = '<td style="padding:2px;border-right:1px solid #ddd;">' + (token.symbol || 'UNKNOWN') + '</td>' +
+                                   '<td style="text-align:right;padding:2px;border-right:1px solid #ddd;font-family:monospace;">' + token.balance + '</td>' +
+                                   '<td style="text-align:right;padding:2px;font-family:monospace;">' + token.quote_value + '</td>';
+                    tokensTableBody.appendChild(row);
+                });
+                tokensResultEl.style.display = 'block';
+            } else {
+                tokensEmptyEl.style.display = 'block';
+                tokensResultEl.style.display = 'block';
+            }
+            
+            statusEl.textContent = 'Wallet inspected';
         } catch (err) {
             loadingEl.style.display = 'none';
             errorEl.textContent = 'Network error: Could not reach API';
