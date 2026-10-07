@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -2202,10 +2202,18 @@ function openChogFinance() {
     const html = `
         <div style="display:flex;flex-direction:column;height:100%;background:#c0c0c0;">
             <div class="menu-bar">
-                <span>File</span><span>Edit</span><span>View</span><span>Help</span>
+                <span>File</span><span>Edit</span><span>View</span><span>Navigate</span><span>Help</span>
             </div>
             
-            <div style="flex:1;padding:16px;overflow-y:auto;">
+            <div style="display:flex;gap:4px;padding:8px;background:#c0c0c0;border-bottom:2px outset #fff;align-items:center;font-size:11px;">
+                <button class="chog-nav-btn" data-section="dashboard" style="padding:4px 8px;cursor:pointer;min-width:60px;">DASHBOARD</button>
+                <button class="chog-nav-btn" data-section="assets" style="padding:4px 8px;cursor:pointer;min-width:60px;">ASSETS</button>
+                <button class="chog-nav-btn" data-section="chog" style="padding:4px 8px;cursor:pointer;min-width:60px;">CHOG</button>
+                <button class="chog-nav-btn" data-section="nfts" style="padding:4px 8px;cursor:pointer;min-width:60px;">NFTS</button>
+                <button class="chog-nav-btn" data-section="activity" style="padding:4px 8px;cursor:pointer;min-width:60px;">ACTIVITY</button>
+            </div>
+            
+            <div style="flex:1;padding:16px;overflow-y:auto;" id="chog-content-area">
                 <div style="font-size:14px;font-weight:bold;margin-bottom:16px;color:#000;">CHOG FINANCE</div>
                 
                 <div style="background:#fff;border:inset 2px #dfdfdf;padding:12px;margin-bottom:12px;">
@@ -2267,8 +2275,8 @@ function openChogFinance() {
                         <div style="color:#000;"><strong>24H Volume:</strong> <span id="chog-volume-display">$0</span></div>
                     </div>
                     
-                    <div id="chog-chart-container" style="display:none;border:inset 1px #808080;background:#fff;padding:8px;margin-bottom:8px;">
-                        <canvas id="chog-price-chart" style="width:100%;height:120px;display:block;"></canvas>
+                    <div id="chog-chart-container" style="display:none;border:inset 1px #808080;background:#fff;padding:8px;margin-bottom:8px;overflow:hidden;">
+                        <iframe id="chog-price-chart" src="https://dexscreener.com/monad/0xde4c4a5d91ed23964a7b636d2b15edf51f4a7a6d?embed=1&info=0" style="width:100%;height:320px;border:none;border-radius:4px;" allowtransparency="true" frameborder="0"></iframe>
                     </div>
                 </div>
                 
@@ -2278,7 +2286,7 @@ function openChogFinance() {
                 </div>
             </div>
             
-            <div class="status-bar" style="font-size:11px;color:#000;">CHOG Finance v0.3</div>
+            <div class="status-bar" style="font-size:11px;color:#000;">CHOG Finance v0.4</div>
         </div>
     `;
     
@@ -2306,6 +2314,369 @@ function openChogFinance() {
     const chogVolumeDisplay = win.querySelector('#chog-volume-display');
     const chogChartContainer = win.querySelector('#chog-chart-container');
     const chogChartCanvas = win.querySelector('#chog-price-chart');
+    const contentArea = win.querySelector('#chog-content-area');
+    const navButtons = win.querySelectorAll('.chog-nav-btn');
+    
+    // Phase 4 Navigation Setup
+    let currentSection = 'dashboard';
+    let walletData = null;
+    
+    function renderDashboard() {
+        const dashboardHTML = `
+            <div style="font-size:11px;color:#000;">
+                <div style="background:#fff;border:inset 2px #dfdfdf;padding:12px;margin-bottom:12px;">
+                    <div style="font-size:11px;font-weight:bold;margin-bottom:8px;color:#000;">WALLET INSPECTOR</div>
+                    
+                    <div style="margin-bottom:8px;">
+                        <input type="text" id="chog-wallet-address" placeholder="Enter Monad wallet address..." style="width:100%;padding:4px 6px;font-size:11px;box-sizing:border-box;border:inset 1px #808080;font-family:monospace;">
+                    </div>
+                    
+                    <button id="chog-inspect-btn" style="padding:4px 12px;font-size:11px;margin-bottom:12px;cursor:pointer;">INSPECT WALLET</button>
+                    
+                    <div id="chog-loading" style="display:none;font-size:10px;color:#666;margin-bottom:8px;">Loading...</div>
+                    <div id="chog-error" style="display:none;font-size:10px;color:#c00;margin-bottom:8px;padding:6px;background:#fee;border:1px solid #c00;"></div>
+                    
+                    <div id="chog-balance-result" style="display:none;font-size:11px;color:#000;margin-bottom:8px;padding:8px;background:#efe;border:1px solid #0c0;">
+                        <div style="font-weight:bold;margin-bottom:4px;">Native Balance:</div>
+                        <div style="font-size:13px;font-family:monospace;"><span id="chog-balance-value">0</span> MON</div>
+                    </div>
+                    
+                    <div id="chog-tokens-result" style="display:none;font-size:11px;color:#000;margin-bottom:8px;padding:8px;background:#efe;border:1px solid #0c0;">
+                        <div style="font-weight:bold;margin-bottom:6px;">Token Holdings:</div>
+                        <table id="chog-tokens-table" style="width:100%;border-collapse:collapse;font-size:10px;">
+                            <thead>
+                                <tr style="border-bottom:1px solid #0c0;">
+                                    <th style="text-align:left;padding:2px;border-right:1px solid #ddd;">Symbol</th>
+                                    <th style="text-align:right;padding:2px;border-right:1px solid #ddd;">Balance</th>
+                                    <th style="text-align:right;padding:2px;">USD Value</th>
+                                </tr>
+                            </thead>
+                            <tbody id="chog-tokens-body">
+                            </tbody>
+                        </table>
+                        <div id="chog-tokens-empty" style="font-size:10px;color:#666;margin-top:4px;">No token holdings</div>
+                    </div>
+                    
+                    <div style="font-size:10px;color:#333;line-height:1.4;margin-bottom:8px;">
+                        Read-only wallet inspection. No wallet connection required.
+                    </div>
+                </div>
+                
+                <div id="chog-position-panel" style="display:none;background:#fff;border:inset 2px #dfdfdf;padding:12px;margin-bottom:12px;">
+                    <div style="font-size:12px;font-weight:bold;margin-bottom:8px;color:#000;">CHOG</div>
+                    
+                    <div style="background:#efe;border:1px solid #0c0;padding:8px;margin-bottom:8px;">
+                        <div style="font-size:13px;font-family:monospace;font-weight:bold;" id="chog-balance-display">0 CHOG</div>
+                        <div style="font-size:14px;font-family:monospace;font-weight:bold;color:#080;" id="chog-value-display">$0.00</div>
+                    </div>
+                    
+                    <div id="chog-market-loading" style="display:none;font-size:10px;color:#666;">Loading market data...</div>
+                    
+                    <div id="chog-market-panel" style="display:none;font-size:11px;background:#e8f0ff;border:1px solid #008;padding:8px;margin-bottom:8px;">
+                        <div style="font-weight:bold;margin-bottom:6px;color:#000;">CHOG MARKET</div>
+                        <div style="margin-bottom:3px;color:#000;"><strong>Price:</strong> <span id="chog-price-display">$0.00</span></div>
+                        <div style="margin-bottom:3px;color:#000;"><strong>24H Change:</strong> <span id="chog-change-display" style="color:#080;">0%</span></div>
+                        <div style="margin-bottom:3px;color:#000;"><strong>Market Cap:</strong> <span id="chog-mcap-display">$0</span></div>
+                        <div style="color:#000;"><strong>24H Volume:</strong> <span id="chog-volume-display">$0</span></div>
+                    </div>
+                    
+                    <div id="chog-chart-container" style="display:none;border:inset 1px #808080;background:#fff;padding:8px;margin-bottom:8px;overflow:hidden;">
+                        <iframe id="chog-price-chart" src="https://dexscreener.com/monad/0xde4c4a5d91ed23964a7b636d2b15edf51f4a7a6d?embed=1&info=0" style="width:100%;height:320px;border:none;border-radius:4px;" allowtransparency="true" frameborder="0"></iframe>
+                    </div>
+                </div>
+                
+                <div style="border:inset 1px #808080;padding:8px;background:#fff;margin-bottom:12px;">
+                    <div style="font-size:11px;color:#000;margin-bottom:4px;"><strong>Network:</strong> Monad</div>
+                    <div style="font-size:11px;color:#000;"><strong>Status:</strong> <span id="chog-status">Ready</span></div>
+                </div>
+            </div>
+        `;
+        contentArea.innerHTML = dashboardHTML;
+        
+        // If walletData exists, populate it in the dashboard without fetching again
+        if (walletData && walletData.walletAddress) {
+            const newWalletInput = contentArea.querySelector('#chog-wallet-address');
+            const newBalanceDiv = contentArea.querySelector('#chog-balance-result');
+            const newBalanceValue = contentArea.querySelector('#chog-balance-value');
+            const newTokensDiv = contentArea.querySelector('#chog-tokens-result');
+            const newTokensBody = contentArea.querySelector('#chog-tokens-body');
+            const newTokensEmpty = contentArea.querySelector('#chog-tokens-empty');
+            const newChogPanel = contentArea.querySelector('#chog-position-panel');
+            const newChogBalDisplay = contentArea.querySelector('#chog-balance-display');
+            const newChogValDisplay = contentArea.querySelector('#chog-value-display');
+            const newChogMktPanel = contentArea.querySelector('#chog-market-panel');
+            const newChogPriceDisp = contentArea.querySelector('#chog-price-display');
+            const newChogChangeDisp = contentArea.querySelector('#chog-change-display');
+            const newChogMcapDisp = contentArea.querySelector('#chog-mcap-display');
+            const newChogVolDisp = contentArea.querySelector('#chog-volume-display');
+            const newChogChartCont = contentArea.querySelector('#chog-chart-container');
+            
+            // Populate wallet address and balance
+            if (newWalletInput) newWalletInput.value = walletData.walletAddress;
+            if (newBalanceValue) newBalanceValue.textContent = walletData.monBalance;
+            if (newBalanceDiv) newBalanceDiv.style.display = 'block';
+            
+            // Populate token holdings if available
+            if (walletData.tokens && walletData.tokens.length > 0) {
+                if (newTokensEmpty) newTokensEmpty.style.display = 'none';
+                walletData.tokens.forEach(token => {
+                    const row = document.createElement('tr');
+                    row.style.borderBottom = '1px solid #ddd';
+                    
+                    let displayValue = token.quote_value;
+                    if (token.contract && token.contract.toLowerCase() === CHOG_CONTRACT.toLowerCase() && walletData.chogPrice_numeric) {
+                        const chogBalance = Number(String(token.balance).replace(/,/g, ""));
+                        const chogUsdValue = chogBalance * walletData.chogPrice_numeric;
+                        displayValue = formatUSD(chogUsdValue);
+                    }
+                    
+                    row.innerHTML = '<td style="padding:2px;border-right:1px solid #ddd;">' + (token.symbol || 'UNKNOWN') + '</td>' +
+                                   '<td style="text-align:right;padding:2px;border-right:1px solid #ddd;font-family:monospace;">' + token.balance + '</td>' +
+                                   '<td style="text-align:right;padding:2px;font-family:monospace;">' + displayValue + '</td>';
+                    if (newTokensBody) newTokensBody.appendChild(row);
+                });
+                if (newTokensDiv) newTokensDiv.style.display = 'block';
+            } else {
+                if (newTokensEmpty) newTokensEmpty.style.display = 'block';
+                if (newTokensDiv) newTokensDiv.style.display = 'block';
+            }
+            
+            // Populate CHOG position if available
+            if (walletData.chogBalance && walletData.chogBalance !== '0 CHOG') {
+                if (newChogBalDisplay) newChogBalDisplay.textContent = walletData.chogBalance;
+                if (newChogValDisplay) newChogValDisplay.textContent = walletData.chogUsdValue;
+                if (newChogPanel) newChogPanel.style.display = 'block';
+                
+                // Display market data
+                if (newChogPriceDisp) newChogPriceDisp.textContent = walletData.chogPrice;
+                if (newChogChangeDisp) {
+                    newChogChangeDisp.textContent = walletData.chogChange;
+                    newChogChangeDisp.style.color = walletData.chogChange.indexOf('-') !== -1 ? '#c00' : '#080';
+                }
+                if (newChogMcapDisp) newChogMcapDisp.textContent = walletData.marketCap;
+                if (newChogVolDisp) newChogVolDisp.textContent = walletData.volume;
+                if (newChogMktPanel) newChogMktPanel.style.display = 'block';
+                
+                // Show chart
+                if (newChogChartCont) newChogChartCont.style.display = 'none';
+            } else {
+                // No CHOG, but still show market data for reference
+                if (newChogBalDisplay) newChogBalDisplay.textContent = '0 CHOG';
+                if (newChogValDisplay) newChogValDisplay.textContent = '$0.00';
+                if (newChogPanel) newChogPanel.style.display = 'block';
+                
+                if (newChogPriceDisp) newChogPriceDisp.textContent = walletData.chogPrice;
+                if (newChogChangeDisp) {
+                    newChogChangeDisp.textContent = walletData.chogChange;
+                    newChogChangeDisp.style.color = walletData.chogChange.indexOf('-') !== -1 ? '#c00' : '#080';
+                }
+                if (newChogMcapDisp) newChogMcapDisp.textContent = walletData.marketCap;
+                if (newChogVolDisp) newChogVolDisp.textContent = walletData.volume;
+                if (newChogMktPanel) newChogMktPanel.style.display = 'block';
+            }
+        }
+        
+        // Re-attach event listeners for the dashboard
+        const newInspectBtn = contentArea.querySelector('#chog-inspect-btn');
+        const newWalletInput = contentArea.querySelector('#chog-wallet-address');
+        if (newInspectBtn) {
+            newInspectBtn.addEventListener('click', handleWalletInspection);
+        }
+    }
+    
+    function renderAssets() {
+        let assetsHTML = `
+            <div style="font-size:11px;color:#000;">
+                <div style="font-weight:bold;margin-bottom:12px;font-size:12px;">ASSETS</div>
+                <div style="background:#fff;border:inset 1px #808080;padding:12px;">
+                    <div id="assets-content" style="font-size:10px;">
+        `;
+        
+        if (walletData) {
+            // Display native MON balance
+            assetsHTML += `
+                        <div style="margin-bottom:12px;">
+                            <div style="margin-bottom:4px;"><strong>Native MON:</strong></div>
+                            <div style="font-family:monospace;">` + walletData.monBalance + ` MON</div>
+                        </div>
+                        
+                        <div>
+                            <div style="margin-bottom:6px;"><strong>Token Holdings:</strong></div>
+                            <table style="width:100%;border-collapse:collapse;font-size:9px;font-family:monospace;">
+                                <thead>
+                                    <tr style="border-bottom:1px solid #ddd;">
+                                        <th style="text-align:left;padding:2px;border-right:1px solid #ddd;">Symbol</th>
+                                        <th style="text-align:right;padding:2px;border-right:1px solid #ddd;">Balance</th>
+                                        <th style="text-align:right;padding:2px;">USD Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+            `;
+            
+            if (walletData.tokens && walletData.tokens.length > 0) {
+                walletData.tokens.forEach(token => {
+                    let displayValue = token.quote_value;
+                    // For CHOG, use live CoinGecko price
+                    if (token.contract && token.contract.toLowerCase() === CHOG_CONTRACT.toLowerCase() && walletData.chogPrice_numeric) {
+                        const chogBalance = Number(String(token.balance).replace(/,/g, ""));
+                        const chogUsdValue = chogBalance * walletData.chogPrice_numeric;
+                        displayValue = formatUSD(chogUsdValue);
+                    }
+                    
+                    assetsHTML += `
+                                    <tr style="border-bottom:1px solid #ddd;">
+                                        <td style="padding:2px;border-right:1px solid #ddd;">` + (token.symbol || 'UNKNOWN') + `</td>
+                                        <td style="text-align:right;padding:2px;border-right:1px solid #ddd;">` + token.balance + `</td>
+                                        <td style="text-align:right;padding:2px;">` + displayValue + `</td>
+                                    </tr>
+                    `;
+                });
+            } else {
+                assetsHTML += `<tr><td colspan="3" style="padding:8px;text-align:center;color:#666;">No token holdings</td></tr>`;
+            }
+            
+            assetsHTML += `
+                                </tbody>
+                            </table>
+                        </div>
+            `;
+        } else {
+            assetsHTML += `Load wallet data from Dashboard first.`;
+        }
+        
+        assetsHTML += `
+                    </div>
+                </div>
+            </div>
+        `;
+        contentArea.innerHTML = assetsHTML;
+    }
+    
+    function renderChogSection() {
+        const chogHTML = `
+            <div style="font-size:11px;color:#000;">
+                <div style="font-weight:bold;margin-bottom:12px;font-size:12px;">CHOG TOKEN</div>
+                <div style="background:#fff;border:inset 1px #808080;padding:12px;">
+                    ${walletData && walletData.chogBalance ? `
+                        <div style="background:#efe;border:1px solid #0c0;padding:12px;margin-bottom:12px;">
+                            <div style="font-size:13px;font-weight:bold;font-family:monospace;margin-bottom:4px;">` + walletData.chogBalance + ` CHOG</div>
+                            <div style="font-size:14px;font-weight:bold;color:#080;font-family:monospace;">` + walletData.chogUsdValue + `</div>
+                        </div>
+                        <div style="font-size:10px;background:#e8f0ff;border:1px solid #008;padding:8px;">
+                            <div style="margin-bottom:4px;"><strong>Price:</strong> ` + (walletData.chogPrice || '$0.00') + `</div>
+                            <div style="margin-bottom:4px;"><strong>24H Change:</strong> ` + (walletData.chogChange || '0%') + `</div>
+                            <div style="margin-bottom:4px;"><strong>Market Cap:</strong> ` + (walletData.marketCap || '$0') + `</div>
+                            <div><strong>24H Volume:</strong> ` + (walletData.volume || '$0') + `</div>
+                        </div>
+                    ` : 'Load wallet data from Dashboard first.'}
+                </div>
+            </div>
+        `;
+        contentArea.innerHTML = chogHTML;
+    }
+    
+    function renderNFTs() {
+        const nftsHTML = `
+            <div style="font-size:11px;color:#000;">
+                <div style="font-weight:bold;margin-bottom:12px;font-size:12px;">CHOG NFT EXPLORER</div>
+                <div style="background:#fff;border:inset 1px #808080;padding:12px;">
+                    <div id="nft-content" style="font-size:10px;">
+                        ${walletData ? 'Loading CHOG NFTs...' : 'Load wallet data from Dashboard first.'}
+                    </div>
+                </div>
+            </div>
+        `;
+        contentArea.innerHTML = nftsHTML;
+        
+        // Load NFTs if wallet data is available
+        if (walletData && walletData.walletAddress) {
+            loadNFTs(walletData.walletAddress);
+        }
+    }
+    
+    function renderActivity() {
+        const activityHTML = `
+            <div style="font-size:11px;color:#000;">
+                <div style="font-weight:bold;margin-bottom:12px;font-size:12px;">ACTIVITY</div>
+                <div style="background:#fff;border:inset 1px #808080;padding:12px;">
+                    <div style="font-size:10px;color:#666;">Transaction history coming in Phase 5.</div>
+                </div>
+            </div>
+        `;
+        contentArea.innerHTML = activityHTML;
+    }
+    
+    function switchSection(section) {
+        currentSection = section;
+        
+        // Update button states
+        navButtons.forEach(btn => {
+            if (btn.getAttribute('data-section') === section) {
+                btn.style.fontWeight = 'bold';
+                btn.style.borderStyle = 'inset';
+            } else {
+                btn.style.fontWeight = 'normal';
+                btn.style.borderStyle = 'outset';
+            }
+        });
+        
+        // Render section
+        switch(section) {
+            case 'dashboard': renderDashboard(); break;
+            case 'assets': renderAssets(); break;
+            case 'chog': renderChogSection(); break;
+            case 'nfts': renderNFTs(); break;
+            case 'activity': renderActivity(); break;
+        }
+    }
+    
+    // Load NFTs from GoldRush
+    async function loadNFTs(address) {
+        try {
+            const nftContentDiv = contentArea.querySelector('#nft-content');
+            const response = await fetch('/api/wallet/nfts?address=' + encodeURIComponent(address));
+            const data = await response.json();
+            
+            if (data.success && data.nfts && data.nfts.length > 0) {
+                const chogNFTs = data.nfts.filter(nft => 
+                    nft.contractName && nft.contractName.toLowerCase().includes('chog')
+                );
+                
+                if (chogNFTs.length > 0) {
+                    let nftHTML = '<div style="margin-bottom:12px;"><strong>Chog NFTs:</strong></div>';
+                    chogNFTs.forEach((nft, idx) => {
+                        nftHTML += `<div style="margin-bottom:8px;padding:8px;background:#f0f0f0;border:1px solid #ccc;cursor:pointer;" onclick="alert('NFT #` + nft.tokenId + ` - Diagnostics coming in Phase 4.1')">
+                            <div><strong>Chog #` + nft.tokenId + `</strong></div>
+                            <div style="font-size:9px;color:#666;">Contract: ` + nft.contract.substring(0, 10) + `...</div>
+                        </div>`;
+                    });
+                    nftContentDiv.innerHTML = nftHTML;
+                } else {
+                    nftContentDiv.innerHTML = '<div style="font-size:10px;color:#666;">No Chog NFTs found in this wallet.</div>';
+                }
+            } else {
+                nftContentDiv.innerHTML = '<div style="font-size:10px;color:#666;">No NFT data available.</div>';
+            }
+        } catch (err) {
+            const nftContentDiv = contentArea.querySelector('#nft-content');
+            nftContentDiv.innerHTML = '<div style="font-size:10px;color:#c00;">Error loading NFTs.</div>';
+        }
+    }
+    
+    // Navigation event listeners
+    navButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            switchSection(btn.getAttribute('data-section'));
+        });
+    });
+    
+    // Initialize with dashboard
+    switchSection('dashboard');
+    
+    // Store wallet data for use across sections
+    function storeWalletData(data) {
+        walletData = data;
+    }
     
     // Helper to format currency
     function formatUSD(value) {
@@ -2392,6 +2763,14 @@ function openChogFinance() {
     // Fetch and update CHOG market data
     async function updateChogMarket() {
         try {
+            // Query elements dynamically from contentArea
+            const chogPriceDisp = contentArea.querySelector('#chog-price-display');
+            const chogChangeDisp = contentArea.querySelector('#chog-change-display');
+            const chogMcapDisp = contentArea.querySelector('#chog-mcap-display');
+            const chogVolDisp = contentArea.querySelector('#chog-volume-display');
+            const chogMktPanel = contentArea.querySelector('#chog-market-panel');
+            const chogMktLoading = contentArea.querySelector('#chog-market-loading');
+            
             const marketResp = await fetch('/api/verify/chog-market');
             const marketData = await marketResp.json();
             
@@ -2400,71 +2779,98 @@ function openChogFinance() {
                 return null;
             }
             
+            // Store market data in window for use across sections
+            window.lastChogPrice = marketData.market.priceUsd;
+            window.lastChogChange = marketData.market.change24h;
+            window.lastChogMarketCap = marketData.market.marketCapUsd;
+            window.lastChogVolume = marketData.market.volume24hUsd;
+            
             // Update market display
-            chogPriceDisplay.textContent = formatUSD(marketData.market.priceUsd);
+            if (chogPriceDisp) chogPriceDisp.textContent = formatUSD(marketData.market.priceUsd);
             
-            const change = marketData.market.change24h;
-            chogChangeDisplay.textContent = (change >= 0 ? '+' : '') + change.toFixed(2) + '%';
-            chogChangeDisplay.style.color = change >= 0 ? '#080' : '#c00';
+            if (chogChangeDisp) {
+                const change = marketData.market.change24h;
+                chogChangeDisp.textContent = (change >= 0 ? '+' : '') + change.toFixed(2) + '%';
+                chogChangeDisp.style.color = change >= 0 ? '#080' : '#c00';
+            }
             
-            chogMcapDisplay.textContent = formatLargeNumber(marketData.market.marketCapUsd);
-            chogVolumeDisplay.textContent = formatLargeNumber(marketData.market.volume24hUsd);
+            if (chogMcapDisp) chogMcapDisp.textContent = formatLargeNumber(marketData.market.marketCapUsd);
+            if (chogVolDisp) chogVolDisp.textContent = formatLargeNumber(marketData.market.volume24hUsd);
             
-            chogMarketPanel.style.display = 'block';
-            chogMarketLoading.style.display = 'none';
+            if (chogMktPanel) chogMktPanel.style.display = 'block';
+            if (chogMktLoading) chogMktLoading.style.display = 'none';
             
             return marketData.market.priceUsd;
         } catch (err) {
             console.error('Market data error:', err);
-            chogMarketLoading.style.display = 'none';
+            const chogMktLoading = contentArea.querySelector('#chog-market-loading');
+            if (chogMktLoading) chogMktLoading.style.display = 'none';
             return null;
         }
     }
     
-    // Fetch and draw historical chart
+    // Show DEX Screener CHOG/MON chart
     async function updateChogChart() {
         try {
-            const historyResp = await fetch('/api/verify/chog-history?days=90');
-            const historyData = await historyResp.json();
-            
-            if (!historyResp.ok || !historyData.success) {
-                console.error('History data failed:', historyData.error);
-                return;
-            }
-            
-            if (historyData.history && historyData.history.length > 0) {
-                drawChart(historyData.history, chogChartCanvas);
-                chogChartContainer.style.display = 'block';
+            const chogChartCont = contentArea.querySelector('#chog-chart-container');
+            if (chogChartCont) {
+                chogChartCont.style.display = 'block';
             }
         } catch (err) {
-            console.error('Chart error:', err);
+            console.error('Chart display error:', err);
         }
     }
     
-    inspectBtn.addEventListener('click', async () => {
-        const address = walletInput.value.trim();
+    async function handleWalletInspection() {
+        const walletAddressInput = contentArea.querySelector('#chog-wallet-address');
+        const inspectButton = contentArea.querySelector('#chog-inspect-btn');
+        const loadingDiv = contentArea.querySelector('#chog-loading');
+        const errorDiv = contentArea.querySelector('#chog-error');
+        const balanceDiv = contentArea.querySelector('#chog-balance-result');
+        const balanceValue = contentArea.querySelector('#chog-balance-value');
+        const tokensDiv = contentArea.querySelector('#chog-tokens-result');
+        const tokensBody = contentArea.querySelector('#chog-tokens-body');
+        const tokensEmpty = contentArea.querySelector('#chog-tokens-empty');
+        const statusDiv = contentArea.querySelector('#chog-status');
+        const chogPanel = contentArea.querySelector('#chog-position-panel');
+        const chogBalDisplay = contentArea.querySelector('#chog-balance-display');
+        const chogValDisplay = contentArea.querySelector('#chog-value-display');
+        const chogMktLoading = contentArea.querySelector('#chog-market-loading');
+        const chogMktPanel = contentArea.querySelector('#chog-market-panel');
+        const chogPriceDisp = contentArea.querySelector('#chog-price-display');
+        const chogChangeDisp = contentArea.querySelector('#chog-change-display');
+        const chogMcapDisp = contentArea.querySelector('#chog-mcap-display');
+        const chogVolDisp = contentArea.querySelector('#chog-volume-display');
+        const chogChartCont = contentArea.querySelector('#chog-chart-container');
+        const chogChartCan = contentArea.querySelector('#chog-price-chart');
+        
+        if (!walletAddressInput) return;
+        
+        const address = walletAddressInput.value.trim();
         
         // Clear previous results
-        errorEl.style.display = 'none';
-        balanceResultEl.style.display = 'none';
-        tokensResultEl.style.display = 'none';
-        chogPositionPanel.style.display = 'none';
-        tokensTableBody.innerHTML = '';
-        loadingEl.style.display = 'none';
-        statusEl.textContent = 'Ready';
+        if (errorDiv) errorDiv.style.display = 'none';
+        if (balanceDiv) balanceDiv.style.display = 'none';
+        if (tokensDiv) tokensDiv.style.display = 'none';
+        if (chogPanel) chogPanel.style.display = 'none';
+        if (tokensBody) tokensBody.innerHTML = '';
+        if (loadingDiv) loadingDiv.style.display = 'none';
+        if (statusDiv) statusDiv.textContent = 'Ready';
         
         // Validate address exists
         if (!address) {
-            errorEl.textContent = 'Please enter a wallet address';
-            errorEl.style.display = 'block';
-            statusEl.textContent = 'Error';
+            if (errorDiv) {
+                errorDiv.textContent = 'Please enter a wallet address';
+                errorDiv.style.display = 'block';
+            }
+            if (statusDiv) statusDiv.textContent = 'Error';
             return;
         }
         
         // Show loading state
-        loadingEl.style.display = 'block';
-        inspectBtn.disabled = true;
-        statusEl.textContent = 'Inspecting...';
+        if (loadingDiv) loadingDiv.style.display = 'block';
+        if (inspectButton) inspectButton.disabled = true;
+        if (statusDiv) statusDiv.textContent = 'Inspecting...';
         
         try {
             // Fetch balance and tokens
@@ -2474,36 +2880,38 @@ function openChogFinance() {
             const balanceData = await balanceResp.json();
             const tokensData = await tokensResp.json();
             
-            loadingEl.style.display = 'none';
+            if (loadingDiv) loadingDiv.style.display = 'none';
             
             // Check if either request failed
             if (!balanceResp.ok || !balanceData.success) {
-                errorEl.textContent = balanceData.error || 'Failed to fetch wallet data';
-                errorEl.style.display = 'block';
-                statusEl.textContent = 'Error';
+                if (errorDiv) {
+                    errorDiv.textContent = balanceData.error || 'Failed to fetch wallet data';
+                    errorDiv.style.display = 'block';
+                }
+                if (statusDiv) statusDiv.textContent = 'Error';
                 return;
             }
             
             // Display native balance
-            balanceValueEl.textContent = balanceData.balance;
-            balanceResultEl.style.display = 'block';
+            if (balanceValue) balanceValue.textContent = balanceData.balance;
+            if (balanceDiv) balanceDiv.style.display = 'block';
             
             // Find CHOG token in holdings and fetch its live price first
             const chogToken = tokensData.tokens ? tokensData.tokens.find(t => t.contract.toLowerCase() === CHOG_CONTRACT.toLowerCase()) : null;
             let chogPrice = null;
             
             if (chogToken) {
-                chogMarketLoading.style.display = 'block';
+                if (chogMktLoading) chogMktLoading.style.display = 'block';
                 chogPrice = await updateChogMarket();
             } else {
                 // No CHOG held - still load market data for reference
-                chogMarketLoading.style.display = 'block';
+                if (chogMktLoading) chogMktLoading.style.display = 'block';
                 await updateChogMarket();
             }
             
             // Display token holdings if tokens exist
             if (tokensResp.ok && tokensData.success && tokensData.tokens && tokensData.tokens.length > 0) {
-                tokensEmptyEl.style.display = 'none';
+                if (tokensEmpty) tokensEmpty.style.display = 'none';
                 tokensData.tokens.forEach(token => {
                     const row = document.createElement('tr');
                     row.style.borderBottom = '1px solid #ddd';
@@ -2519,13 +2927,27 @@ function openChogFinance() {
                     row.innerHTML = '<td style="padding:2px;border-right:1px solid #ddd;">' + (token.symbol || 'UNKNOWN') + '</td>' +
                                    '<td style="text-align:right;padding:2px;border-right:1px solid #ddd;font-family:monospace;">' + token.balance + '</td>' +
                                    '<td style="text-align:right;padding:2px;font-family:monospace;">' + displayValue + '</td>';
-                    tokensTableBody.appendChild(row);
+                    if (tokensBody) tokensBody.appendChild(row);
                 });
-                tokensResultEl.style.display = 'block';
+                if (tokensDiv) tokensDiv.style.display = 'block';
             } else {
-                tokensEmptyEl.style.display = 'block';
-                tokensResultEl.style.display = 'block';
+                if (tokensEmpty) tokensEmpty.style.display = 'block';
+                if (tokensDiv) tokensDiv.style.display = 'block';
             }
+            
+            // Store wallet data for use across Phase 4 sections
+            storeWalletData({
+                walletAddress: address,
+                monBalance: balanceData.balance,
+                chogBalance: chogToken ? chogToken.balance + ' CHOG' : '0 CHOG',
+                chogUsdValue: chogToken && chogPrice ? formatUSD(Number(String(chogToken.balance).replace(/,/g, "")) * chogPrice) : '$0.00',
+                chogPrice: chogPrice ? formatUSD(chogPrice) : '$0.00',
+                chogChange: (window.lastChogChange !== undefined ? (window.lastChogChange >= 0 ? '+' : '') + window.lastChogChange.toFixed(2) + '%' : '0%'),
+                marketCap: (window.lastChogMarketCap ? formatLargeNumber(window.lastChogMarketCap) : '$0'),
+                volume: (window.lastChogVolume ? formatLargeNumber(window.lastChogVolume) : '$0'),
+                tokens: tokensData.tokens || [],
+                chogPrice_numeric: chogPrice
+            });
             
             if (chogToken && chogPrice) {
                 // Calculate CHOG USD value using live CoinGecko price
@@ -2533,37 +2955,29 @@ function openChogFinance() {
                 const chogUsdValue = chogBalance * chogPrice;
                 
                 // Display CHOG position
-                chogBalanceDisplay.textContent = chogToken.balance + ' CHOG';
-                chogValueDisplay.textContent = formatUSD(chogUsdValue);
-                chogPositionPanel.style.display = 'block';
+                if (chogBalDisplay) chogBalDisplay.textContent = chogToken.balance + ' CHOG';
+                if (chogValDisplay) chogValDisplay.textContent = formatUSD(chogUsdValue);
+                if (chogPanel) chogPanel.style.display = 'block';
                 
                 // Load historical chart
                 await updateChogChart();
-            } else {
-                if (chogToken) {
-                    chogMarketLoading.style.display = 'none';
-                } else {
-                    // No CHOG held - show zero position
-                    chogBalanceDisplay.textContent = '0 CHOG';
-                    chogValueDisplay.textContent = '$0.00';
-                    
-                    // Load chart even if no CHOG held
-                    await updateChogChart();
-                    
-                    chogPositionPanel.style.display = 'block';
-                }
+                
+                if (chogPanel) chogPanel.style.display = 'block';
             }
             
-            statusEl.textContent = 'Wallet inspected';
+            if (statusDiv) statusDiv.textContent = 'Wallet inspected';
         } catch (err) {
-            loadingEl.style.display = 'none';
-            errorEl.textContent = 'Network error: Could not reach API';
-            errorEl.style.display = 'block';
-            statusEl.textContent = 'Error';
+            console.error('Wallet inspection error:', err);
+            if (loadingDiv) loadingDiv.style.display = 'none';
+            if (errorDiv) {
+                errorDiv.textContent = 'Network error: Could not reach API';
+                errorDiv.style.display = 'block';
+            }
+            if (statusDiv) statusDiv.textContent = 'Error';
         } finally {
-            inspectBtn.disabled = false;
+            if (inspectButton) inspectButton.disabled = false;
         }
-    });
+    }
 }
 
 /* ===== MUSIC PLAYER (PHASE 1: DUMMY WINDOW) ===== */
@@ -4482,6 +4896,8 @@ hiddenGemVideo.addEventListener("ended", () => {
 
 
     </script>
+
+<script src="js/chog-finance-phase4.js"></script>
 
 <audio id="boot-sound" src="assets/sounds/startup.wav" preload="auto"></audio>
 
