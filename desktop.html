@@ -2197,6 +2197,8 @@ document.getElementById("start-settings")?.addEventListener("click", () => {
 
 /* ===== CHOG FINANCE ===== */
 function openChogFinance() {
+    const CHOG_CONTRACT = '0x350035555e10d9afaf1566aaebfced5ba6c27777';
+    
     const html = `
         <div style="display:flex;flex-direction:column;height:100%;background:#c0c0c0;">
             <div class="menu-bar">
@@ -2247,19 +2249,42 @@ function openChogFinance() {
                     </div>
                 </div>
                 
+                <div id="chog-position-panel" style="display:none;background:#fff;border:inset 2px #dfdfdf;padding:12px;margin-bottom:12px;">
+                    <div style="font-size:12px;font-weight:bold;margin-bottom:8px;color:#000;">CHOG</div>
+                    
+                    <div style="background:#efe;border:1px solid #0c0;padding:8px;margin-bottom:8px;">
+                        <div style="font-size:13px;font-family:monospace;font-weight:bold;" id="chog-balance-display">0 CHOG</div>
+                        <div style="font-size:14px;font-family:monospace;font-weight:bold;color:#080;" id="chog-value-display">$0.00</div>
+                    </div>
+                    
+                    <div id="chog-market-loading" style="display:none;font-size:10px;color:#666;">Loading market data...</div>
+                    
+                    <div id="chog-market-panel" style="display:none;font-size:11px;background:#e8f0ff;border:1px solid #008;padding:8px;margin-bottom:8px;">
+                        <div style="font-weight:bold;margin-bottom:6px;color:#000;">CHOG MARKET</div>
+                        <div style="margin-bottom:3px;color:#000;"><strong>Price:</strong> <span id="chog-price-display">$0.00</span></div>
+                        <div style="margin-bottom:3px;color:#000;"><strong>24H Change:</strong> <span id="chog-change-display" style="color:#080;">0%</span></div>
+                        <div style="margin-bottom:3px;color:#000;"><strong>Market Cap:</strong> <span id="chog-mcap-display">$0</span></div>
+                        <div style="color:#000;"><strong>24H Volume:</strong> <span id="chog-volume-display">$0</span></div>
+                    </div>
+                    
+                    <div id="chog-chart-container" style="display:none;border:inset 1px #808080;background:#fff;padding:8px;margin-bottom:8px;">
+                        <canvas id="chog-price-chart" style="width:100%;height:120px;display:block;"></canvas>
+                    </div>
+                </div>
+                
                 <div style="border:inset 1px #808080;padding:8px;background:#fff;margin-bottom:12px;">
                     <div style="font-size:11px;color:#000;margin-bottom:4px;"><strong>Network:</strong> Monad</div>
                     <div style="font-size:11px;color:#000;"><strong>Status:</strong> <span id="chog-status">Ready</span></div>
                 </div>
             </div>
             
-            <div class="status-bar" style="font-size:11px;color:#000;">CHOG Finance v0.2</div>
+            <div class="status-bar" style="font-size:11px;color:#000;">CHOG Finance v0.3</div>
         </div>
     `;
     
     const win = openWindow("CHOG Finance", html, "assets/images/documents.png");
     
-    // Wire up the inspect button
+    // Cache elements
     const inspectBtn = win.querySelector('#chog-inspect-btn');
     const walletInput = win.querySelector('#chog-wallet-address');
     const loadingEl = win.querySelector('#chog-loading');
@@ -2270,6 +2295,151 @@ function openChogFinance() {
     const tokensTableBody = win.querySelector('#chog-tokens-body');
     const tokensEmptyEl = win.querySelector('#chog-tokens-empty');
     const statusEl = win.querySelector('#chog-status');
+    const chogPositionPanel = win.querySelector('#chog-position-panel');
+    const chogBalanceDisplay = win.querySelector('#chog-balance-display');
+    const chogValueDisplay = win.querySelector('#chog-value-display');
+    const chogMarketLoading = win.querySelector('#chog-market-loading');
+    const chogMarketPanel = win.querySelector('#chog-market-panel');
+    const chogPriceDisplay = win.querySelector('#chog-price-display');
+    const chogChangeDisplay = win.querySelector('#chog-change-display');
+    const chogMcapDisplay = win.querySelector('#chog-mcap-display');
+    const chogVolumeDisplay = win.querySelector('#chog-volume-display');
+    const chogChartContainer = win.querySelector('#chog-chart-container');
+    const chogChartCanvas = win.querySelector('#chog-price-chart');
+    
+    // Helper to format currency
+    function formatUSD(value) {
+        if (!value || value === 0) return '$0.00';
+        return '$' + parseFloat(value).toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: value < 1 ? 8 : 2
+        });
+    }
+    
+    // Helper to format large numbers
+    function formatLargeNumber(num) {
+        if (!num) return '$0';
+        
+        // Handle string input with commas (e.g., "1,836,000")
+        const parsedNum = Number(String(num).replace(/,/g, ""));
+        
+        if (isNaN(parsedNum)) return '$0';
+        
+        if (parsedNum >= 1000000000) return '$' + (parsedNum / 1000000000).toFixed(2) + 'B';
+        if (parsedNum >= 1000000) return '$' + (parsedNum / 1000000).toFixed(2) + 'M';
+        if (parsedNum >= 1000) return '$' + (parsedNum / 1000).toFixed(2) + 'K';
+        return '$' + parsedNum.toFixed(2);
+    }
+    
+    // Helper to draw simple line chart
+    function drawChart(historyData, canvas) {
+        if (!historyData || historyData.length === 0) return;
+        
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width;
+        const height = canvas.height;
+        
+        // Clear canvas
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, width, height);
+        
+        // Find min/max for scaling
+        const prices = historyData.map(h => h.close);
+        const minPrice = Math.min(...prices);
+        const maxPrice = Math.max(...prices);
+        const range = maxPrice - minPrice || 1;
+        
+        // Padding
+        const padding = 20;
+        const chartWidth = width - (padding * 2);
+        const chartHeight = height - (padding * 2);
+        
+        // Draw light grid
+        ctx.strokeStyle = '#e0e0e0';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(padding, padding);
+        ctx.lineTo(padding, height - padding);
+        ctx.lineTo(width - padding, height - padding);
+        ctx.stroke();
+        
+        // Draw price line
+        ctx.strokeStyle = '#0066cc';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        
+        for (let i = 0; i < historyData.length; i++) {
+            const price = historyData[i].close;
+            const x = padding + (i / (historyData.length - 1)) * chartWidth;
+            const y = height - padding - ((price - minPrice) / range) * chartHeight;
+            
+            if (i === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
+        }
+        ctx.stroke();
+        
+        // Draw min/max labels
+        ctx.fillStyle = '#666';
+        ctx.font = '10px monospace';
+        ctx.textAlign = 'right';
+        ctx.fillText('$' + maxPrice.toFixed(8), width - 5, padding + 10);
+        ctx.fillText('$' + minPrice.toFixed(8), width - 5, height - padding - 5);
+    }
+    
+    // Fetch and update CHOG market data
+    async function updateChogMarket() {
+        try {
+            const marketResp = await fetch('/api/verify/chog-market');
+            const marketData = await marketResp.json();
+            
+            if (!marketResp.ok || !marketData.success) {
+                console.error('Market data failed:', marketData.error);
+                return null;
+            }
+            
+            // Update market display
+            chogPriceDisplay.textContent = formatUSD(marketData.market.priceUsd);
+            
+            const change = marketData.market.change24h;
+            chogChangeDisplay.textContent = (change >= 0 ? '+' : '') + change.toFixed(2) + '%';
+            chogChangeDisplay.style.color = change >= 0 ? '#080' : '#c00';
+            
+            chogMcapDisplay.textContent = formatLargeNumber(marketData.market.marketCapUsd);
+            chogVolumeDisplay.textContent = formatLargeNumber(marketData.market.volume24hUsd);
+            
+            chogMarketPanel.style.display = 'block';
+            chogMarketLoading.style.display = 'none';
+            
+            return marketData.market.priceUsd;
+        } catch (err) {
+            console.error('Market data error:', err);
+            chogMarketLoading.style.display = 'none';
+            return null;
+        }
+    }
+    
+    // Fetch and draw historical chart
+    async function updateChogChart() {
+        try {
+            const historyResp = await fetch('/api/verify/chog-history?days=90');
+            const historyData = await historyResp.json();
+            
+            if (!historyResp.ok || !historyData.success) {
+                console.error('History data failed:', historyData.error);
+                return;
+            }
+            
+            if (historyData.history && historyData.history.length > 0) {
+                drawChart(historyData.history, chogChartCanvas);
+                chogChartContainer.style.display = 'block';
+            }
+        } catch (err) {
+            console.error('Chart error:', err);
+        }
+    }
     
     inspectBtn.addEventListener('click', async () => {
         const address = walletInput.value.trim();
@@ -2278,6 +2448,7 @@ function openChogFinance() {
         errorEl.style.display = 'none';
         balanceResultEl.style.display = 'none';
         tokensResultEl.style.display = 'none';
+        chogPositionPanel.style.display = 'none';
         tokensTableBody.innerHTML = '';
         loadingEl.style.display = 'none';
         statusEl.textContent = 'Ready';
@@ -2296,7 +2467,7 @@ function openChogFinance() {
         statusEl.textContent = 'Inspecting...';
         
         try {
-            // Fetch both balance and tokens in parallel
+            // Fetch balance and tokens
             const balanceResp = await fetch('/api/wallet/balance?address=' + encodeURIComponent(address));
             const tokensResp = await fetch('/api/wallet/tokens?address=' + encodeURIComponent(address));
             
@@ -2317,21 +2488,70 @@ function openChogFinance() {
             balanceValueEl.textContent = balanceData.balance;
             balanceResultEl.style.display = 'block';
             
+            // Find CHOG token in holdings and fetch its live price first
+            const chogToken = tokensData.tokens ? tokensData.tokens.find(t => t.contract.toLowerCase() === CHOG_CONTRACT.toLowerCase()) : null;
+            let chogPrice = null;
+            
+            if (chogToken) {
+                chogMarketLoading.style.display = 'block';
+                chogPrice = await updateChogMarket();
+            } else {
+                // No CHOG held - still load market data for reference
+                chogMarketLoading.style.display = 'block';
+                await updateChogMarket();
+            }
+            
             // Display token holdings if tokens exist
             if (tokensResp.ok && tokensData.success && tokensData.tokens && tokensData.tokens.length > 0) {
                 tokensEmptyEl.style.display = 'none';
                 tokensData.tokens.forEach(token => {
                     const row = document.createElement('tr');
                     row.style.borderBottom = '1px solid #ddd';
+                    
+                    // For CHOG, use live CoinGecko price instead of GoldRush quote_value
+                    let displayValue = token.quote_value;
+                    if (token.contract && token.contract.toLowerCase() === CHOG_CONTRACT.toLowerCase() && chogPrice) {
+                        const chogBalance = Number(String(token.balance).replace(/,/g, ""));
+                        const chogUsdValue = chogBalance * chogPrice;
+                        displayValue = formatUSD(chogUsdValue);
+                    }
+                    
                     row.innerHTML = '<td style="padding:2px;border-right:1px solid #ddd;">' + (token.symbol || 'UNKNOWN') + '</td>' +
                                    '<td style="text-align:right;padding:2px;border-right:1px solid #ddd;font-family:monospace;">' + token.balance + '</td>' +
-                                   '<td style="text-align:right;padding:2px;font-family:monospace;">' + token.quote_value + '</td>';
+                                   '<td style="text-align:right;padding:2px;font-family:monospace;">' + displayValue + '</td>';
                     tokensTableBody.appendChild(row);
                 });
                 tokensResultEl.style.display = 'block';
             } else {
                 tokensEmptyEl.style.display = 'block';
                 tokensResultEl.style.display = 'block';
+            }
+            
+            if (chogToken && chogPrice) {
+                // Calculate CHOG USD value using live CoinGecko price
+                const chogBalance = Number(String(chogToken.balance).replace(/,/g, ""));
+                const chogUsdValue = chogBalance * chogPrice;
+                
+                // Display CHOG position
+                chogBalanceDisplay.textContent = chogToken.balance + ' CHOG';
+                chogValueDisplay.textContent = formatUSD(chogUsdValue);
+                chogPositionPanel.style.display = 'block';
+                
+                // Load historical chart
+                await updateChogChart();
+            } else {
+                if (chogToken) {
+                    chogMarketLoading.style.display = 'none';
+                } else {
+                    // No CHOG held - show zero position
+                    chogBalanceDisplay.textContent = '0 CHOG';
+                    chogValueDisplay.textContent = '$0.00';
+                    
+                    // Load chart even if no CHOG held
+                    await updateChogChart();
+                    
+                    chogPositionPanel.style.display = 'block';
+                }
             }
             
             statusEl.textContent = 'Wallet inspected';
