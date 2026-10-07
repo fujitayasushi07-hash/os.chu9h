@@ -1595,6 +1595,11 @@
                         MS Paint
                     </div>
 
+                    <div class="start-item" id="open-chog-finance">
+                        <img src="assets/images/documents.png" alt="">
+                        CHOG Finance
+                    </div>
+
                     <!-- Twitter / X -->
     <div class="start-item" id="open-twitter">
         <img src="assets/images/twitter.png" alt="">
@@ -1809,6 +1814,15 @@ document
         startButton.classList.remove("active");
     });
 
+    /* ===== START MENU: CHOG FINANCE ===== */
+document
+    .getElementById("open-chog-finance")
+    ?.addEventListener("click", () => {
+        openChogFinance();
+        startMenu.style.display = "none";
+        startButton.classList.remove("active");
+    });
+
     /* ===== START MENU: SOCIAL LINKS ===== */
 
 // Twitter / X
@@ -1873,12 +1887,31 @@ document.getElementById("start-logoff")?.addEventListener("click", () => {
 
 // Documents
 document.getElementById("start-documents")?.addEventListener("click", () => {
-    win98CloseSound.currentTime = 0;
-    win98CloseSound.play().catch(() => {});
-
     openWindow(
         "Documents",
-        '<div style="padding:8px;">This folder is currently empty.</div>',
+        `<div class="explorer-window">
+            <div class="menu-bar">
+                <span>File</span><span>Edit</span><span>View</span><span>Help</span>
+            </div>
+            <div class="toolbar">
+                <button disabled>Back</button>
+                <button disabled>Forward</button>
+            </div>
+            <div class="address-bar">
+                <strong>Address:</strong>
+                <input value="Documents" readonly>
+            </div>
+            <div class="explorer-main">
+                <div class="explorer-side">
+                    <img src="assets/images/documents.png" style="width:48px;height:48px;image-rendering:pixelated;margin-bottom:8px;">
+                    <div class="side-header">Documents</div>
+                    <div class="side-divider"></div>
+                    <div class="side-text">Your personal documents.</div>
+                </div>
+                <div class="explorer-content">This folder is currently empty.</div>
+            </div>
+            <div class="status-bar">0 object(s)</div>
+        </div>`,
         "assets/images/documents.png"
     );
     
@@ -2162,6 +2195,44 @@ document.getElementById("start-settings")?.addEventListener("click", () => {
     return win;
 }
 
+/* ===== CHOG FINANCE ===== */
+function openChogFinance() {
+    const html = `
+        <div style="display:flex;flex-direction:column;height:100%;background:#c0c0c0;">
+            <div class="menu-bar">
+                <span>File</span><span>Edit</span><span>View</span><span>Help</span>
+            </div>
+            
+            <div style="flex:1;padding:16px;overflow-y:auto;">
+                <div style="font-size:14px;font-weight:bold;margin-bottom:16px;color:#000;">CHOG FINANCE</div>
+                
+                <div style="background:#fff;border:inset 2px #dfdfdf;padding:12px;margin-bottom:12px;">
+                    <div style="font-size:11px;font-weight:bold;margin-bottom:8px;color:#000;">WALLET INSPECTOR</div>
+                    
+                    <div style="margin-bottom:8px;">
+                        <input type="text" placeholder="Enter Monad wallet address..." style="width:100%;padding:4px 6px;font-size:11px;box-sizing:border-box;border:inset 1px #808080;font-family:monospace;">
+                    </div>
+                    
+                    <button style="padding:4px 12px;font-size:11px;margin-bottom:12px;cursor:pointer;">INSPECT WALLET</button>
+                    
+                    <div style="font-size:10px;color:#333;line-height:1.4;margin-bottom:8px;">
+                        Read-only wallet inspection. No wallet connection required.
+                    </div>
+                </div>
+                
+                <div style="border:inset 1px #808080;padding:8px;background:#fff;margin-bottom:12px;">
+                    <div style="font-size:11px;color:#000;margin-bottom:4px;"><strong>Network:</strong> Monad</div>
+                    <div style="font-size:11px;color:#000;"><strong>Status:</strong> Ready</div>
+                </div>
+            </div>
+            
+            <div class="status-bar" style="font-size:11px;color:#000;">CHOG Finance v0.1</div>
+        </div>
+    `;
+    
+    openWindow("CHOG Finance", html, "assets/images/documents.png");
+}
+
 /* ===== MUSIC PLAYER (PHASE 1: DUMMY WINDOW) ===== */
 function openMusicPlayer() {
     // If already open, just bring to front
@@ -2207,6 +2278,12 @@ function openMusicPlayer() {
 <!-- TRACK LIST -->
 <div class="mp-playlist" id="mp-playlist" tabindex="0">
     <div class="mp-track-inner">
+        <div class="mp-track-item" data-src="assets/music/Bet You Feel It Now Lady.mhi.MP3">
+            Bet You Feel It Now Lady
+        </div>
+         <div class="mp-track-item" data-src="assets/music/Chomigos Mau.MP3">
+            Chomigos Mau
+        </div>
         <div class="mp-track-item" data-src="assets/music/Dam Dadi Doo .mp3">
             Dam Dadi Doo.mp3
         </div>
@@ -2242,6 +2319,9 @@ function openMusicPlayer() {
         </div>
         <div class="mp-track-item" data-src="assets/music/fame is a gun (sped up + reverb) [rJOs19HfueA].mp3">
             fame is a gun.mp3
+        </div>
+        <div class="mp-track-item" data-src="assets/music/Rise of Chog Guides112.MP3">
+            Rise of Chog Guides112
         </div>
     <div class="mp-scrollbar" aria-hidden="false">
         <div class="mp-scroll-thumb"></div>
