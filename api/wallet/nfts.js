@@ -1,42 +1,241 @@
 /**
  * Vercel Serverless Function: /api/wallet/nfts
- * 
+ *
  * Accepts: GET ?address=<wallet_address>
  * Returns: { success, nfts, status } or error
- * 
- * Retrieves NFT holdings for a wallet by querying the Chog Genesis contract directly.
- * Uses ethers.js to call ERC-721 balanceOf() and tokenOfOwnerByIndex().
+ *
+ * Retrieves Chog Genesis NFT ownership from the hosted Envio GraphQL indexer.
  */
 
 const { ethers } = require('ethers');
 
-// Chog Genesis NFT contract on Monad (ERC-721)
 const CHOG_GENESIS_NFT_CONTRACT = '0xc96d31f8626c6d03fae5dcd3d61e3fb9f4a73763';
-
-// Monad RPC endpoint (mainnet)
-const MONAD_RPC = 'https://rpc.monad.xyz';
-
-// Simple ERC-721 ABI (only methods we need)
-const ERC721_ABI = [
-  'function balanceOf(address owner) view returns (uint256)',
-  'function ownerOf(uint256 tokenId) view returns (address)',
-  'function name() view returns (string)',
-  'function symbol() view returns (string)'
+const ENVIO_GRAPHQL_URL = 'https://indexer.dev.hyperindex.xyz/7d09780/v1/graphql';
+const MONAD_RPC_URL = 'https://rpc.monad.xyz';
+const IPFS_GATEWAYS = [
+    'https://gateway.pinata.cloud/ipfs/',
+    'https://cloudflare-ipfs.com/ipfs/',
+    'https://ipfs.io/ipfs/'
+];
+const MAX_NFT_RESULTS = 500;
+const REQUEST_TIMEOUT_MS = 10000;
+const METADATA_CONCURRENCY = 5;
+const ERC721_METADATA_ABI = [
+    'function tokenURI(uint256 tokenId) view returns (string)'
 ];
 
-/**
- * Validate if string looks like an EVM wallet address
- */
 function isValidEVMAddress(address) {
     if (!address || typeof address !== 'string') return false;
     return /^0x[a-fA-F0-9]{40}$/.test(address);
 }
 
-/**
- * Main handler
- */
+async function getOwnedTokens(owner) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    let result;
+
+    try {
+        const response = await fetch(ENVIO_GRAPHQL_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                query: `query OwnedChogTokens($owner: String!, $limit: Int!) {
+                    ChogMint_Token(
+                        where: { owner: { _eq: $owner } }
+                        limit: $limit
+                    ) {
+                        id
+                        owner
+                    }
+                }`,
+                variables: {
+                    owner,
+                    limit: MAX_NFT_RESULTS
+                }
+            }),
+            signal: controller.signal
+        });
+
+        if (!response.ok) {
+            const upstreamError = new Error(`NFT indexer request failed with HTTP ${response.status}`);
+            upstreamError.statusCode = 502;
+            throw upstreamError;
+        }
+
+        try {
+            result = await response.json();
+        } catch (error) {
+            if (controller.signal.aborted) throw error;
+            const responseError = new Error('NFT indexer returned an invalid response');
+            responseError.statusCode = 502;
+            throw responseError;
+        }
+    } catch (error) {
+        if (error.statusCode) throw error;
+        if (controller.signal.aborted) {
+            const timeoutError = new Error('NFT indexer request timed out');
+            timeoutError.statusCode = 504;
+            throw timeoutError;
+        }
+        throw new Error('Unable to connect to the NFT indexer');
+    } finally {
+        clearTimeout(timeout);
+    }
+
+    if (result.errors && result.errors.length > 0) {
+        const graphqlError = new Error('NFT indexer returned a GraphQL error');
+        graphqlError.statusCode = 502;
+        throw graphqlError;
+    }
+
+    const tokens = result.data && result.data.ChogMint_Token;
+    if (!Array.isArray(tokens) || tokens.some(token => !token || token.id === null || token.id === undefined)) {
+        const responseError = new Error('NFT indexer returned an unexpected response shape');
+        responseError.statusCode = 502;
+        throw responseError;
+    }
+
+    if (tokens.length === MAX_NFT_RESULTS) {
+        const limitError = new Error('NFT indexer result limit reached; refusing to return potentially incomplete results');
+        limitError.statusCode = 502;
+        throw limitError;
+    }
+
+    return tokens;
+}
+
+function getIpfsGatewayUrls(uri) {
+    const path = uri.slice('ipfs://'.length).replace(/^ipfs\//, '');
+    const encodedPath = path.split('/').map(encodeURIComponent).join('/');
+    return IPFS_GATEWAYS.map(gateway => gateway + encodedPath);
+}
+
+function resolveImageUri(uri) {
+    if (typeof uri !== 'string') return uri;
+    if (uri.startsWith('ipfs://')) return getIpfsGatewayUrls(uri)[0];
+    return uri;
+}
+
+async function fetchMetadata(uri) {
+    if (typeof uri !== 'string' || !uri) {
+        throw new Error('Contract returned an invalid token URI');
+    }
+
+    const isIpfsUri = uri.startsWith('ipfs://');
+    const urls = isIpfsUri
+        ? getIpfsGatewayUrls(uri)
+        : [uri];
+
+    if (!urls.every(url => /^https?:\/\//i.test(url)) ||
+        (isIpfsUri && !urls.every(url => url.startsWith('https://')))) {
+        throw new Error('Unsupported NFT metadata URI scheme');
+    }
+
+    let lastError;
+    for (const url of urls) {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+        try {
+            try {
+                const response = await fetch(url, {
+                    headers: { Accept: 'application/json' },
+                    signal: controller.signal
+                });
+                if (!response.ok) {
+                    lastError = new Error(`Metadata gateway returned HTTP ${response.status}`);
+                    continue;
+                }
+
+                const metadata = await response.json();
+                if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) {
+                    lastError = new Error('Metadata response is not a JSON object');
+                    continue;
+                }
+
+                if (typeof metadata.image === 'string') {
+                    metadata.image = resolveImageUri(metadata.image);
+                }
+                return metadata;
+            } catch (error) {
+                lastError = controller.signal.aborted
+                    ? new Error('NFT metadata gateway request timed out')
+                    : error;
+            }
+        } finally {
+            clearTimeout(timeout);
+        }
+    }
+
+    throw lastError || new Error('Unable to retrieve NFT metadata');
+}
+
+async function getTokenMetadata(contract, tokenId) {
+    let tokenUrl = null;
+    let metadata = null;
+
+    try {
+        tokenUrl = await contract.tokenURI(tokenId);
+        if (typeof tokenUrl !== 'string' || !tokenUrl) {
+            throw new Error('Contract returned an invalid token URI');
+        }
+        metadata = await fetchMetadata(tokenUrl);
+    } catch (error) {
+        console.error(`NFT metadata retrieval failed for token ${tokenId}:`, error.message);
+    }
+
+    return { tokenUrl, metadata };
+}
+
+async function addMetadataToTokens(tokens) {
+    if (tokens.length === 0) return [];
+
+    let provider;
+    let contract;
+    try {
+        const request = new ethers.FetchRequest(MONAD_RPC_URL);
+        request.timeout = REQUEST_TIMEOUT_MS;
+        provider = new ethers.JsonRpcProvider(request);
+        contract = new ethers.Contract(
+            CHOG_GENESIS_NFT_CONTRACT,
+            ERC721_METADATA_ABI,
+            provider
+        );
+    } catch (error) {
+        console.error('NFT metadata provider initialization failed:', error.message);
+        return tokens.map(token => ({ token, tokenUrl: null, metadata: null }));
+    }
+
+    const enrichedTokens = new Array(tokens.length);
+    let nextIndex = 0;
+
+    try {
+        const workerCount = Math.min(METADATA_CONCURRENCY, tokens.length);
+        await Promise.all(Array.from({ length: workerCount }, async () => {
+            while (nextIndex < tokens.length) {
+                const index = nextIndex++;
+                const token = tokens[index];
+                try {
+                    const { tokenUrl, metadata } = await getTokenMetadata(contract, token.id);
+                    enrichedTokens[index] = { token, tokenUrl, metadata };
+                } catch (error) {
+                    console.error(`Unexpected NFT metadata worker error for token ${token.id}:`, error.message);
+                    enrichedTokens[index] = { token, tokenUrl: null, metadata: null };
+                }
+            }
+        }));
+    } finally {
+        try {
+            provider.destroy();
+        } catch (error) {
+            console.error('NFT metadata provider cleanup failed:', error.message);
+        }
+    }
+
+    return enrichedTokens;
+}
+
 module.exports = async (req, res) => {
-    // Only allow GET requests
     if (req.method !== 'GET') {
         return res.status(405).json({
             success: false,
@@ -44,177 +243,59 @@ module.exports = async (req, res) => {
         });
     }
 
+    const { address } = req.query;
+
+    if (!address) {
+        return res.status(400).json({
+            success: false,
+            error: 'Missing wallet address',
+            status: 'invalid_request'
+        });
+    }
+
+    if (!isValidEVMAddress(address)) {
+        return res.status(400).json({
+            success: false,
+            error: 'Invalid wallet address format',
+            status: 'invalid_address'
+        });
+    }
+
     try {
-        const { address } = req.query;
-
-        // Validate address parameter exists
-        if (!address) {
-            return res.status(400).json({
-                success: false,
-                error: 'Missing wallet address',
-                status: 'invalid_request'
-            });
-        }
-
-        // Validate address format
-        if (!isValidEVMAddress(address)) {
-            return res.status(400).json({
-                success: false,
-                error: 'Invalid wallet address format',
-                status: 'invalid_address'
-            });
-        }
-
-        // Connect to Monad RPC
-        console.log('Connecting to Monad RPC:', MONAD_RPC);
-        const provider = new ethers.JsonRpcProvider(MONAD_RPC);
-
-        // Create contract instance
-        const contract = new ethers.Contract(
-            CHOG_GENESIS_NFT_CONTRACT,
-            ERC721_ABI,
-            provider
-        );
-
-        console.log('Querying Chog Genesis contract for wallet:', address);
-
-        // Check balance of wallet
-        let balance;
-        try {
-            balance = await contract.balanceOf(address);
-            console.log('Wallet balance:', balance.toString());
-        } catch (error) {
-            console.error('Error calling balanceOf:', error.message);
-            return res.status(200).json({
-                success: false,
-                network: 'Monad',
-                address: address,
-                nfts: [],
-                status: 'provider_error',
-                error: 'Failed to query contract: ' + error.message
-            });
-        }
-
-        // If no NFTs, return empty list with success_no_nfts status
-        if (balance === 0n) {
-            console.log('Wallet owns no Chog Genesis NFTs');
-            return res.status(200).json({
-                success: true,
-                network: 'Monad',
-                address: address,
-                nfts: [],
-                count: 0,
-                status: 'success_no_nfts'
-            });
-        }
-
-        // Wallet owns NFTs - find token IDs by scanning ranges
-        const nfts = [];
-        const balanceNum = Number(balance);
-
-        console.log('Wallet owns', balanceNum, 'Chog Genesis NFTs. Finding token IDs...');
-
-        try {
-            // Since Chog Genesis doesn't implement ERC721Enumerable, we need to find token IDs
-            // by scanning ranges. We'll use an intelligent search that starts with common ranges
-            // and expands as needed.
-            
-            const foundTokenIds = [];
-            const MAX_TOKEN_ID = 2000; // Chog Genesis has 1969 total supply
-            const BATCH_SIZE = 50; // Check 50 tokens at a time
-            
-            console.log('Scanning token ID ranges to find owned tokens...');
-            
-            // Scan in batches from 0 to MAX_TOKEN_ID
-            for (let tokenId = 0; tokenId < MAX_TOKEN_ID; tokenId += BATCH_SIZE) {
-                const batchPromises = [];
-                
-                // Create promises for checking ownerOf for a batch of token IDs
-                for (let i = 0; i < BATCH_SIZE && (tokenId + i) < MAX_TOKEN_ID; i++) {
-                    batchPromises.push(
-                        contract.ownerOf(tokenId + i)
-                            .then(owner => ({
-                                tokenId: tokenId + i,
-                                owner: owner,
-                                owned: owner.toLowerCase() === address.toLowerCase()
-                            }))
-                            .catch(() => ({
-                                tokenId: tokenId + i,
-                                owner: null,
-                                owned: false,
-                                error: true
-                            }))
-                    );
-                }
-                
-                // Wait for this batch
-                const batchResults = await Promise.all(batchPromises);
-                
-                // Check if any tokens in this batch are owned by the wallet
-                for (const result of batchResults) {
-                    if (result.owned) {
-                        console.log(`Found owned token: ${result.tokenId}`);
-                        foundTokenIds.push(result.tokenId);
-                    }
-                }
-                
-                // Log progress every 200 tokens
-                if ((tokenId + BATCH_SIZE) % 200 === 0) {
-                    console.log(`Scanned tokens ${tokenId} to ${tokenId + BATCH_SIZE - 1}, found ${foundTokenIds.length} so far...`);
-                }
-                
-                // If we've found all the tokens the wallet owns, we can stop early
-                if (foundTokenIds.length === balanceNum) {
-                    console.log(`Found all ${balanceNum} owned tokens`);
-                    break;
-                }
-            }
-            
-            console.log('Found token IDs:', foundTokenIds);
-            
-            // Create NFT records for each found token
-            for (const tokenId of foundTokenIds) {
-                nfts.push({
-                    contract: CHOG_GENESIS_NFT_CONTRACT,
-                    contractName: 'Chog Genesis',
-                    tokenId: tokenId.toString(),
-                    balance: '1',
-                    type: 'ERC721',
-                    tokenMetadata: null,
-                    tokenUrl: null,
-                    supportsErc165: true,
-                    supportsErc721: true,
-                    supportsErc1155: false
-                });
-            }
-
-        } catch (error) {
-            console.error('Error finding NFT token IDs:', error.message);
-            // Fall back: if token search fails, return what we have (nothing)
-        }
-
-        console.log('Total Chog Genesis NFTs found:', nfts.length);
+        const tokens = await getOwnedTokens(address.toLowerCase());
+        const enrichedTokens = await addMetadataToTokens(tokens);
+        const nfts = enrichedTokens.map(({ token, tokenUrl, metadata }) => ({
+            contract: CHOG_GENESIS_NFT_CONTRACT,
+            contractName: 'Chog Genesis',
+            tokenId: String(token.id),
+            balance: '1',
+            type: 'ERC721',
+            metadata,
+            tokenMetadata: metadata,
+            tokenUrl,
+            supportsErc165: true,
+            supportsErc721: true,
+            supportsErc1155: false
+        }));
 
         return res.status(200).json({
             success: true,
             network: 'Monad',
-            address: address,
-            nfts: nfts,
+            address,
+            nfts,
             count: nfts.length,
             status: nfts.length > 0 ? 'success_has_nfts' : 'success_no_nfts'
         });
-
     } catch (error) {
-        console.error('Wallet NFT error:', error.message);
+        console.error('Wallet NFT indexer error:', error.message);
 
-        return res.status(200).json({
+        return res.status(error.statusCode || 502).json({
             success: false,
             network: 'Monad',
-            address: req.query.address || '',
+            address,
             nfts: [],
-            status: 'error',
+            status: error.statusCode === 504 ? 'provider_timeout' : 'provider_error',
             error: error.message
         });
     }
 };
-
