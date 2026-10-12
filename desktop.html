@@ -6,6 +6,7 @@
     <title>GLITCHWARE Desktop</title>
 
     <link rel="stylesheet" href="https://unpkg.com/98.css" />
+    <script defer src="https://unpkg.com/lightweight-charts@5.2.1/dist/lightweight-charts.standalone.production.js"></script>
 
     <style>
 
@@ -2276,7 +2277,9 @@ function openChogFinance() {
                     </div>
                     
                     <div id="chog-chart-container" style="display:none;border:inset 1px #808080;background:#fff;padding:8px;margin-bottom:8px;overflow:hidden;">
-                        <iframe id="chog-price-chart" src="https://dexscreener.com/monad/0xde4c4a5d91ed23964a7b636d2b15edf51f4a7a6d?embed=1&info=0" style="width:100%;height:320px;border:none;border-radius:4px;" allowtransparency="true" frameborder="0"></iframe>
+                        <div id="chog-chart-loading" style="display:none;font-size:10px;color:#666;margin-bottom:6px;">Loading CHOG price history...</div>
+                        <div id="chog-chart-error" style="display:none;font-size:10px;color:#c00;margin-bottom:6px;"></div>
+                        <div id="chog-price-chart" style="width:100%;height:260px;"></div>
                     </div>
                 </div>
                 
@@ -2312,16 +2315,27 @@ function openChogFinance() {
     const chogChangeDisplay = win.querySelector('#chog-change-display');
     const chogMcapDisplay = win.querySelector('#chog-mcap-display');
     const chogVolumeDisplay = win.querySelector('#chog-volume-display');
-    const chogChartContainer = win.querySelector('#chog-chart-container');
-    const chogChartCanvas = win.querySelector('#chog-price-chart');
     const contentArea = win.querySelector('#chog-content-area');
     const navButtons = win.querySelectorAll('.chog-nav-btn');
     
     // Phase 4 Navigation Setup
     let currentSection = 'dashboard';
     let walletData = null;
-    
+    let chogHistoryChart = null;
+
+    win.querySelector('[aria-label="Close"]').addEventListener('click', () => {
+        if (chogHistoryChart) {
+            chogHistoryChart.remove();
+            chogHistoryChart = null;
+        }
+    });
+
     function renderDashboard() {
+        if (chogHistoryChart) {
+            chogHistoryChart.remove();
+            chogHistoryChart = null;
+        }
+
         const dashboardHTML = `
             <div style="font-size:11px;color:#000;">
                 <div style="background:#fff;border:inset 2px #dfdfdf;padding:12px;margin-bottom:12px;">
@@ -2381,7 +2395,9 @@ function openChogFinance() {
                     </div>
                     
                     <div id="chog-chart-container" style="display:none;border:inset 1px #808080;background:#fff;padding:8px;margin-bottom:8px;overflow:hidden;">
-                        <iframe id="chog-price-chart" src="https://dexscreener.com/monad/0xde4c4a5d91ed23964a7b636d2b15edf51f4a7a6d?embed=1&info=0" style="width:100%;height:320px;border:none;border-radius:4px;" allowtransparency="true" frameborder="0"></iframe>
+                        <div id="chog-chart-loading" style="display:none;font-size:10px;color:#666;margin-bottom:6px;">Loading CHOG price history...</div>
+                        <div id="chog-chart-error" style="display:none;font-size:10px;color:#c00;margin-bottom:6px;"></div>
+                        <div id="chog-price-chart" style="width:100%;height:260px;"></div>
                     </div>
                 </div>
                 
@@ -2409,7 +2425,6 @@ function openChogFinance() {
             const newChogChangeDisp = contentArea.querySelector('#chog-change-display');
             const newChogMcapDisp = contentArea.querySelector('#chog-mcap-display');
             const newChogVolDisp = contentArea.querySelector('#chog-volume-display');
-            const newChogChartCont = contentArea.querySelector('#chog-chart-container');
             
             // Populate wallet address and balance
             if (newWalletInput) newWalletInput.value = walletData.walletAddress;
@@ -2457,8 +2472,7 @@ function openChogFinance() {
                 if (newChogVolDisp) newChogVolDisp.textContent = walletData.volume;
                 if (newChogMktPanel) newChogMktPanel.style.display = 'block';
                 
-                // Show chart
-                if (newChogChartCont) newChogChartCont.style.display = 'none';
+                updateChogChart();
             } else {
                 // No CHOG, but still show market data for reference
                 if (newChogBalDisplay) newChogBalDisplay.textContent = '0 CHOG';
@@ -2634,6 +2648,33 @@ function openChogFinance() {
     // Chog Genesis NFT contract on Monad
     const CHOG_GENESIS_NFT_CONTRACT = '0xc96d31f8626c6d03fae5dcd3d61e3fb9f4a73763';
     
+    /**
+     * Convert IPFS URI to gateway URL for images
+     */
+    function ipfsToGatewayUrl(ipfsUri) {
+        if (!ipfsUri) return null;
+        if (ipfsUri.startsWith('ipfs://')) {
+            const hash = ipfsUri.substring(7);
+            return `https://cloudflare-ipfs.com/ipfs/${hash}`;
+        }
+        if (ipfsUri.startsWith('http')) {
+            return ipfsUri;
+        }
+        return null;
+    }
+    
+    /**
+     * Format traits for display
+     */
+    function formatTraits(attributes) {
+        if (!attributes || !Array.isArray(attributes)) return [];
+        return attributes.slice(0, 6).map(attr => {
+            const traitType = attr.trait_type || attr.type || 'Unknown';
+            const value = attr.value || 'N/A';
+            return `${traitType}: ${value}`;
+        });
+    }
+    
     async function loadNFTs(address) {
         try {
             const nftContentDiv = contentArea.querySelector('#nft-content');
@@ -2665,14 +2706,50 @@ function openChogFinance() {
                 
                 if (chogGenesisNFTs.length > 0) {
                     console.log('Found', chogGenesisNFTs.length, 'Chog Genesis NFT(s)');
+                    
                     let nftHTML = '<div style="margin-bottom:12px;"><strong>Chog Genesis NFTs (' + chogGenesisNFTs.length + '):</strong></div>';
+                    
                     chogGenesisNFTs.forEach((nft, idx) => {
-                        nftHTML += `<div style="margin-bottom:8px;padding:8px;background:#f0f0f0;border:1px solid #ccc;cursor:pointer;" onclick="alert('NFT #` + nft.tokenId + ` - Metadata coming soon')">
-                            <div><strong>Chog Genesis #` + nft.tokenId + `</strong></div>
-                            <div style="font-size:9px;color:#666;">Contract: ` + nft.contract.substring(0, 10) + `...</div>
-                            <div style="font-size:9px;color:#666;">Type: ` + nft.type + `</div>
-                        </div>`;
+                        const metadata = nft.metadata || {};
+                        const nftName = metadata.name || `NFT #${nft.tokenId}`;
+                        const imageUrl = ipfsToGatewayUrl(metadata.image);
+                        const traits = formatTraits(metadata.attributes);
+                        
+                        // Build trait display
+                        let traitHTML = '';
+                        if (traits.length > 0) {
+                            traitHTML = '<div style="font-size:9px;color:#444;margin-top:6px;line-height:1.3;">';
+                            traits.forEach(trait => {
+                                traitHTML += `<div style="margin-bottom:2px;">• ${trait}</div>`;
+                            });
+                            if (metadata.attributes && metadata.attributes.length > 6) {
+                                traitHTML += `<div style="margin-top:3px;color:#666;font-style:italic;">+ ${metadata.attributes.length - 6} more traits</div>`;
+                            }
+                            traitHTML += '</div>';
+                        }
+                        
+                        // Build NFT card
+                        nftHTML += `
+                        <div style="margin-bottom:12px;padding:10px;background:#fff;border:inset 2px #dfdfdf;font-size:10px;">
+                            <div style="margin-bottom:8px;">
+                                <div style="font-weight:bold;color:#000;margin-bottom:4px;">${nftName}</div>
+                                <div style="color:#666;font-size:9px;">Token ID: ${nft.tokenId}</div>
+                            </div>
+                            ${imageUrl ? `
+                            <div style="margin-bottom:8px;border:1px solid #999;background:#f0f0f0;text-align:center;overflow:hidden;width:120px;height:120px;">
+                                <img src="${imageUrl}" alt="${nftName}" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.style.display='none';this.parentElement.innerHTML='<div style=\\"padding:40px 10px;color:#999;\\">[Image unavailable]</div>'">
+                            </div>
+                            ` : ''}
+                            ${metadata.description ? `
+                            <div style="color:#555;font-size:9px;margin-bottom:6px;line-height:1.3;max-height:40px;overflow:hidden;">
+                                ${metadata.description.substring(0, 120)}${metadata.description.length > 120 ? '...' : ''}
+                            </div>
+                            ` : ''}
+                            ${traitHTML}
+                        </div>
+                        `;
                     });
+                    
                     nftContentDiv.innerHTML = nftHTML;
                 } else {
                     console.log('No Chog Genesis NFTs found (API returned', data.nfts.length, 'other NFT contract(s))');
@@ -2729,64 +2806,6 @@ function openChogFinance() {
         return '$' + parsedNum.toFixed(2);
     }
     
-    // Helper to draw simple line chart
-    function drawChart(historyData, canvas) {
-        if (!historyData || historyData.length === 0) return;
-        
-        const ctx = canvas.getContext('2d');
-        const width = canvas.width;
-        const height = canvas.height;
-        
-        // Clear canvas
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(0, 0, width, height);
-        
-        // Find min/max for scaling
-        const prices = historyData.map(h => h.close);
-        const minPrice = Math.min(...prices);
-        const maxPrice = Math.max(...prices);
-        const range = maxPrice - minPrice || 1;
-        
-        // Padding
-        const padding = 20;
-        const chartWidth = width - (padding * 2);
-        const chartHeight = height - (padding * 2);
-        
-        // Draw light grid
-        ctx.strokeStyle = '#e0e0e0';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(padding, padding);
-        ctx.lineTo(padding, height - padding);
-        ctx.lineTo(width - padding, height - padding);
-        ctx.stroke();
-        
-        // Draw price line
-        ctx.strokeStyle = '#0066cc';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        
-        for (let i = 0; i < historyData.length; i++) {
-            const price = historyData[i].close;
-            const x = padding + (i / (historyData.length - 1)) * chartWidth;
-            const y = height - padding - ((price - minPrice) / range) * chartHeight;
-            
-            if (i === 0) {
-                ctx.moveTo(x, y);
-            } else {
-                ctx.lineTo(x, y);
-            }
-        }
-        ctx.stroke();
-        
-        // Draw min/max labels
-        ctx.fillStyle = '#666';
-        ctx.font = '10px monospace';
-        ctx.textAlign = 'right';
-        ctx.fillText('$' + maxPrice.toFixed(8), width - 5, padding + 10);
-        ctx.fillText('$' + minPrice.toFixed(8), width - 5, height - padding - 5);
-    }
-    
     // Fetch and update CHOG market data
     async function updateChogMarket() {
         try {
@@ -2836,15 +2855,105 @@ function openChogFinance() {
         }
     }
     
-    // Show DEX Screener CHOG/MON chart
+    // Fetch and draw CHOG historical price data
     async function updateChogChart() {
+        const chogChartCont = contentArea.querySelector('#chog-chart-container');
+        const loadingEl = contentArea.querySelector('#chog-chart-loading');
+        const errorEl = contentArea.querySelector('#chog-chart-error');
+        const chartContainer = contentArea.querySelector('#chog-price-chart');
+
+        if (!chogChartCont || !chartContainer) return;
+        chogChartCont.style.display = 'block';
+        if (loadingEl) loadingEl.style.display = 'block';
+        if (chogHistoryChart) {
+            chogHistoryChart.remove();
+            chogHistoryChart = null;
+        }
+        if (errorEl) {
+            errorEl.style.display = 'none';
+            errorEl.textContent = '';
+        }
+
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 15000);
         try {
-            const chogChartCont = contentArea.querySelector('#chog-chart-container');
-            if (chogChartCont) {
-                chogChartCont.style.display = 'block';
+            if (!window.LightweightCharts) {
+                throw new Error('Chart library is unavailable.');
             }
+
+            const response = await fetch('/api/verify/chog-history?days=90', {
+                signal: controller.signal
+            });
+            const data = await response.json();
+
+            if (!response.ok || !data.success || !Array.isArray(data.history)) {
+                throw new Error(data.error || 'No CHOG price history is available.');
+            }
+
+            const candlesByTime = new Map();
+            data.history.forEach(candle => {
+                const time = Math.floor(Number(candle.timestamp) / 1000);
+                const open = Number(candle.open);
+                const high = Number(candle.high);
+                const low = Number(candle.low);
+                const close = Number(candle.close);
+                if (Number.isFinite(time) && time > 0 &&
+                    [open, high, low, close].every(Number.isFinite) &&
+                    low <= Math.min(open, close) && high >= Math.max(open, close)) {
+                    candlesByTime.set(time, { time, open, high, low, close });
+                }
+            });
+            const candles = Array.from(candlesByTime.values()).sort((a, b) => a.time - b.time);
+            if (candles.length === 0) {
+                throw new Error('No usable CHOG price candles are available.');
+            }
+
+            chogHistoryChart = window.LightweightCharts.createChart(chartContainer, {
+                autoSize: true,
+                height: 260,
+                layout: {
+                    background: { type: 'solid', color: '#ffffff' },
+                    textColor: '#000000'
+                },
+                grid: {
+                    vertLines: { color: '#e0e0e0' },
+                    horzLines: { color: '#e0e0e0' }
+                },
+                timeScale: { borderColor: '#808080' },
+                rightPriceScale: { borderColor: '#808080' }
+            });
+            const candlestickSeries = chogHistoryChart.addSeries(
+                window.LightweightCharts.CandlestickSeries,
+                {
+                    upColor: '#008000',
+                    downColor: '#c00000',
+                    borderVisible: false,
+                    wickUpColor: '#008000',
+                    wickDownColor: '#c00000',
+                    priceFormat: {
+                        type: 'price',
+                        precision: 8,
+                        minMove: 0.00000001
+                    }
+                }
+            );
+            candlestickSeries.setData(candles);
+            chogHistoryChart.timeScale().fitContent();
         } catch (err) {
-            console.error('Chart display error:', err);
+            console.error('CHOG chart error:', err);
+            if (chogHistoryChart) {
+                chogHistoryChart.remove();
+                chogHistoryChart = null;
+            }
+            if (errorEl) {
+                errorEl.textContent = controller.signal.aborted
+                    ? 'Timed out loading CHOG price history.'
+                    : (err.message || 'Unable to load CHOG price history.');
+                errorEl.style.display = 'block';
+            }
+        } finally {
+            clearTimeout(timeout);
+            if (loadingEl) loadingEl.style.display = 'none';
         }
     }
     
@@ -2868,8 +2977,6 @@ function openChogFinance() {
         const chogChangeDisp = contentArea.querySelector('#chog-change-display');
         const chogMcapDisp = contentArea.querySelector('#chog-mcap-display');
         const chogVolDisp = contentArea.querySelector('#chog-volume-display');
-        const chogChartCont = contentArea.querySelector('#chog-chart-container');
-        const chogChartCan = contentArea.querySelector('#chog-price-chart');
         
         if (!walletAddressInput) return;
         

@@ -4,6 +4,7 @@
   "description": "Windows 98-style web OS with blockchain wallet inspector",
   "private": true,
   "dependencies": {
-    "ethers": "^6"
+    "ethers": "^6",
+    "lightweight-charts": "^5.2.1"
   }
 }
