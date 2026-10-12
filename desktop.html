@@ -2277,6 +2277,12 @@ function openChogFinance() {
                     </div>
                     
                     <div id="chog-chart-container" style="display:none;border:inset 1px #808080;background:#fff;padding:8px;margin-bottom:8px;overflow:hidden;">
+                        <div class="chog-chart-timeframes" style="display:flex;gap:4px;margin-bottom:6px;">
+                            <button type="button" data-chog-days="1" style="padding:2px 8px;font-size:10px;cursor:pointer;">1D</button>
+                            <button type="button" data-chog-days="7" style="padding:2px 8px;font-size:10px;cursor:pointer;">7D</button>
+                            <button type="button" data-chog-days="30" style="padding:2px 8px;font-size:10px;cursor:pointer;">30D</button>
+                            <button type="button" data-chog-days="90" style="padding:2px 8px;font-size:10px;cursor:pointer;background:#321C72;color:#fff;font-weight:bold;">90D</button>
+                        </div>
                         <div id="chog-chart-loading" style="display:none;font-size:10px;color:#666;margin-bottom:6px;">Loading CHOG price history...</div>
                         <div id="chog-chart-error" style="display:none;font-size:10px;color:#c00;margin-bottom:6px;"></div>
                         <div id="chog-price-chart" style="width:100%;height:260px;"></div>
@@ -2322,19 +2328,28 @@ function openChogFinance() {
     let currentSection = 'dashboard';
     let walletData = null;
     let chogHistoryChart = null;
+    let chogCandlestickSeries = null;
+    let chogChartRequestId = 0;
+    let chogChartRequestController = null;
+    let selectedChogChartDays = 90;
 
-    win.querySelector('[aria-label="Close"]').addEventListener('click', () => {
+    function destroyChogHistoryChart() {
+        chogChartRequestId++;
+        if (chogChartRequestController) {
+            chogChartRequestController.abort();
+            chogChartRequestController = null;
+        }
         if (chogHistoryChart) {
             chogHistoryChart.remove();
             chogHistoryChart = null;
         }
-    });
+        chogCandlestickSeries = null;
+    }
+
+    win.querySelector('[aria-label="Close"]').addEventListener('click', destroyChogHistoryChart);
 
     function renderDashboard() {
-        if (chogHistoryChart) {
-            chogHistoryChart.remove();
-            chogHistoryChart = null;
-        }
+        destroyChogHistoryChart();
 
         const dashboardHTML = `
             <div style="font-size:11px;color:#000;">
@@ -2395,6 +2410,12 @@ function openChogFinance() {
                     </div>
                     
                     <div id="chog-chart-container" style="display:none;border:inset 1px #808080;background:#fff;padding:8px;margin-bottom:8px;overflow:hidden;">
+                        <div class="chog-chart-timeframes" style="display:flex;gap:4px;margin-bottom:6px;">
+                            <button type="button" data-chog-days="1" style="padding:2px 8px;font-size:10px;cursor:pointer;">1D</button>
+                            <button type="button" data-chog-days="7" style="padding:2px 8px;font-size:10px;cursor:pointer;">7D</button>
+                            <button type="button" data-chog-days="30" style="padding:2px 8px;font-size:10px;cursor:pointer;">30D</button>
+                            <button type="button" data-chog-days="90" style="padding:2px 8px;font-size:10px;cursor:pointer;">90D</button>
+                        </div>
                         <div id="chog-chart-loading" style="display:none;font-size:10px;color:#666;margin-bottom:6px;">Loading CHOG price history...</div>
                         <div id="chog-chart-error" style="display:none;font-size:10px;color:#c00;margin-bottom:6px;"></div>
                         <div id="chog-price-chart" style="width:100%;height:260px;"></div>
@@ -2493,6 +2514,12 @@ function openChogFinance() {
         // Re-attach event listeners for the dashboard
         const newInspectBtn = contentArea.querySelector('#chog-inspect-btn');
         const newWalletInput = contentArea.querySelector('#chog-wallet-address');
+        contentArea.querySelectorAll('[data-chog-days]').forEach(button => {
+            button.addEventListener('click', () => {
+                const days = Number(button.getAttribute('data-chog-days'));
+                updateChogChart(days);
+            });
+        });
         if (newInspectBtn) {
             newInspectBtn.addEventListener('click', handleWalletInspection);
         }
@@ -2856,35 +2883,48 @@ function openChogFinance() {
     }
     
     // Fetch and draw CHOG historical price data
-    async function updateChogChart() {
+    function updateChogChartButtons(days) {
+        contentArea.querySelectorAll('[data-chog-days]').forEach(button => {
+            const selected = Number(button.getAttribute('data-chog-days')) === days;
+            button.style.backgroundColor = selected ? '#321C72' : '';
+            button.style.color = selected ? '#fff' : '';
+            button.style.fontWeight = selected ? 'bold' : 'normal';
+            button.style.borderStyle = selected ? 'inset' : 'outset';
+        });
+    }
+
+    async function updateChogChart(days = selectedChogChartDays) {
         const chogChartCont = contentArea.querySelector('#chog-chart-container');
         const loadingEl = contentArea.querySelector('#chog-chart-loading');
         const errorEl = contentArea.querySelector('#chog-chart-error');
         const chartContainer = contentArea.querySelector('#chog-price-chart');
 
         if (!chogChartCont || !chartContainer) return;
+        selectedChogChartDays = days;
+        updateChogChartButtons(days);
+        const requestId = ++chogChartRequestId;
+        if (chogChartRequestController) chogChartRequestController.abort();
+        const controller = new AbortController();
+        chogChartRequestController = controller;
         chogChartCont.style.display = 'block';
         if (loadingEl) loadingEl.style.display = 'block';
-        if (chogHistoryChart) {
-            chogHistoryChart.remove();
-            chogHistoryChart = null;
-        }
         if (errorEl) {
             errorEl.style.display = 'none';
             errorEl.textContent = '';
         }
+        if (chogCandlestickSeries) chogCandlestickSeries.setData([]);
 
-        const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 15000);
         try {
             if (!window.LightweightCharts) {
                 throw new Error('Chart library is unavailable.');
             }
 
-            const response = await fetch('/api/verify/chog-history?days=90', {
+            const response = await fetch('/api/verify/chog-history?days=' + days, {
                 signal: controller.signal
             });
             const data = await response.json();
+            if (requestId !== chogChartRequestId) return;
 
             if (!response.ok || !data.success || !Array.isArray(data.history)) {
                 throw new Error(data.error || 'No CHOG price history is available.');
@@ -2908,52 +2948,56 @@ function openChogFinance() {
                 throw new Error('No usable CHOG price candles are available.');
             }
 
-            chogHistoryChart = window.LightweightCharts.createChart(chartContainer, {
-                autoSize: true,
-                height: 260,
-                layout: {
-                    background: { type: 'solid', color: '#ffffff' },
-                    textColor: '#000000'
-                },
-                grid: {
-                    vertLines: { color: '#e0e0e0' },
-                    horzLines: { color: '#e0e0e0' }
-                },
-                timeScale: { borderColor: '#808080' },
-                rightPriceScale: { borderColor: '#808080' }
-            });
-            const candlestickSeries = chogHistoryChart.addSeries(
-                window.LightweightCharts.CandlestickSeries,
-                {
-                    upColor: '#008000',
-                    downColor: '#c00000',
-                    borderVisible: false,
-                    wickUpColor: '#008000',
-                    wickDownColor: '#c00000',
-                    priceFormat: {
-                        type: 'price',
-                        precision: 8,
-                        minMove: 0.00000001
+            if (requestId !== chogChartRequestId) return;
+            if (!chogHistoryChart) {
+                chogHistoryChart = window.LightweightCharts.createChart(chartContainer, {
+                    autoSize: true,
+                    height: 260,
+                    layout: {
+                        background: { type: 'solid', color: '#FFFFFF' },
+                        textColor: '#202124'
+                    },
+                    grid: {
+                        vertLines: { color: '#E6E6E6' },
+                        horzLines: { color: '#E6E6E6' }
+                    },
+                    timeScale: { borderColor: '#B8B8B8' },
+                    rightPriceScale: { borderColor: '#B8B8B8' }
+                });
+                chogCandlestickSeries = chogHistoryChart.addSeries(
+                    window.LightweightCharts.CandlestickSeries,
+                    {
+                        upColor: '#321C72',
+                        downColor: '#D53F7C',
+                        borderUpColor: '#321C72',
+                        borderDownColor: '#D53F7C',
+                        wickUpColor: '#321C72',
+                        wickDownColor: '#D53F7C',
+                        priceFormat: {
+                            type: 'price',
+                            precision: 8,
+                            minMove: 0.00000001
+                        }
                     }
-                }
-            );
-            candlestickSeries.setData(candles);
+                );
+            }
+            chogCandlestickSeries.setData(candles);
             chogHistoryChart.timeScale().fitContent();
         } catch (err) {
+            if (requestId !== chogChartRequestId) return;
             console.error('CHOG chart error:', err);
-            if (chogHistoryChart) {
-                chogHistoryChart.remove();
-                chogHistoryChart = null;
-            }
             if (errorEl) {
-                errorEl.textContent = controller.signal.aborted
+                errorEl.textContent = controller.signal.aborted && requestId === chogChartRequestId
                     ? 'Timed out loading CHOG price history.'
                     : (err.message || 'Unable to load CHOG price history.');
                 errorEl.style.display = 'block';
             }
         } finally {
             clearTimeout(timeout);
-            if (loadingEl) loadingEl.style.display = 'none';
+            if (requestId === chogChartRequestId) {
+                chogChartRequestController = null;
+                if (loadingEl) loadingEl.style.display = 'none';
+            }
         }
     }
     
