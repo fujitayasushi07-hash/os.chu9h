@@ -268,6 +268,7 @@ module.exports = async (req, res) => {
             contract: CHOG_GENESIS_NFT_CONTRACT,
             contractName: 'Chog Genesis',
             tokenId: String(token.id),
+            owner: typeof token.owner === 'string' && token.owner ? token.owner : null,
             balance: '1',
             type: 'ERC721',
             metadata,

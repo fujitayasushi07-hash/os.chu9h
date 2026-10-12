@@ -464,6 +464,83 @@
             overflow: hidden;
             padding-bottom: 0 !important;
         }
+
+        .chog-nft-card {
+            display: grid;
+            grid-template-columns: clamp(72px, 28%, 112px) minmax(0, 1fr);
+            gap: 10px;
+            align-items: start;
+            margin-bottom: 10px;
+            padding: 8px;
+            background: #fff;
+            border: inset 2px #dfdfdf;
+            font-size: 10px;
+            transition: transform 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
+        }
+
+        .chog-nft-card:hover {
+            transform: translateY(-2px);
+            border-color: #321C72;
+            box-shadow: 0 2px 6px rgba(50, 28, 114, 0.2);
+        }
+
+        .chog-nft-card:focus-visible {
+            outline: 2px solid #D53F7C;
+            outline-offset: 2px;
+        }
+
+        .chog-nft-artwork {
+            width: 100%;
+            aspect-ratio: 1;
+            border: 1px solid #999;
+            background: #f0f0f0;
+            object-fit: cover;
+        }
+
+        .chog-nft-inspect-hint {
+            margin-top: 5px;
+            color: #321C72;
+            font-size: 8px;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 140ms ease;
+        }
+
+        .chog-nft-typewriter-cursor {
+            display: none;
+            margin-left: 3px;
+            color: #321C72;
+            font-weight: bold;
+        }
+
+        .chog-nft-typewriter-active .chog-nft-typewriter-cursor {
+            display: inline;
+            animation: chog-nft-cursor-blink 900ms steps(2, start) infinite;
+        }
+
+        @keyframes chog-nft-cursor-blink {
+            to { visibility: hidden; }
+        }
+
+        .chog-nft-card:hover .chog-nft-inspect-hint,
+        .chog-nft-card:focus-visible .chog-nft-inspect-hint {
+            opacity: 1;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .chog-nft-card,
+            .chog-nft-inspect-hint {
+                transition: none;
+            }
+
+            .chog-nft-typewriter-active .chog-nft-typewriter-cursor {
+                animation: none;
+            }
+
+            .chog-nft-card:hover {
+                transform: none;
+            }
+        }
         
         /* Status bar flush to bottom */
         .window .status-bar {
@@ -2300,6 +2377,87 @@ function openChogFinance() {
     `;
     
     const win = openWindow("CHOG Finance", html, "assets/images/documents.png");
+    const desktop = document.getElementById('desktop');
+    const mobileWidthLimit = window.innerWidth <= 768 ? window.innerWidth - 20 : desktop.clientWidth;
+    const minFinanceWidth = Math.min(480, desktop.clientWidth, mobileWidthLimit);
+    const mobileHeightLimit = window.innerWidth <= 768 ? window.innerHeight * 0.7 : desktop.clientHeight;
+    const minFinanceHeight = Math.min(360, desktop.clientHeight, mobileHeightLimit);
+    win.style.minWidth = minFinanceWidth + 'px';
+    win.style.minHeight = minFinanceHeight + 'px';
+
+    if (!win.querySelector('[data-finance-resize-handle]')) {
+        const resizeHandle = document.createElement('div');
+        resizeHandle.dataset.financeResizeHandle = 'true';
+        resizeHandle.setAttribute('role', 'separator');
+        resizeHandle.setAttribute('aria-label', 'Resize CHOG Finance window');
+        resizeHandle.title = 'Resize window';
+        resizeHandle.style.cssText = [
+            'position:absolute',
+            'right:2px',
+            'bottom:2px',
+            'width:16px',
+            'height:16px',
+            'z-index:10',
+            'cursor:nwse-resize',
+            'touch-action:none',
+            'background:repeating-linear-gradient(135deg,transparent 0 3px,#808080 3px 4px,#fff 4px 5px)'
+        ].join(';');
+        win.appendChild(resizeHandle);
+
+        let resizeStart = null;
+        resizeHandle.addEventListener('pointerdown', event => {
+            event.preventDefault();
+            event.stopPropagation();
+
+            const bounds = desktop.getBoundingClientRect();
+            const rect = win.getBoundingClientRect();
+            const cssMaxHeight = parseFloat(getComputedStyle(win).maxHeight);
+            const left = Math.min(Math.max(rect.left, bounds.left), bounds.right - minFinanceWidth);
+            const top = Math.min(Math.max(rect.top, bounds.top), bounds.bottom - minFinanceHeight);
+            win.style.transform = 'none';
+            win.style.left = left + 'px';
+            win.style.top = top + 'px';
+            win.style.width = Math.min(rect.width, bounds.right - left) + 'px';
+            win.style.height = Math.min(rect.height, bounds.bottom - top) + 'px';
+
+            resizeStart = {
+                pointerId: event.pointerId,
+                x: event.clientX,
+                y: event.clientY,
+                width: win.getBoundingClientRect().width,
+                height: win.getBoundingClientRect().height,
+                maxWidth: bounds.right - left,
+                maxHeight: Math.min(
+                    bounds.bottom - top,
+                    Number.isFinite(cssMaxHeight) ? cssMaxHeight : bounds.bottom - top
+                )
+            };
+            win.style.zIndex = ++windowZ;
+            resizeHandle.setPointerCapture(event.pointerId);
+        });
+
+        resizeHandle.addEventListener('pointermove', event => {
+            if (!resizeStart || event.pointerId !== resizeStart.pointerId) return;
+            const width = Math.min(
+                resizeStart.maxWidth,
+                Math.max(minFinanceWidth, resizeStart.width + event.clientX - resizeStart.x)
+            );
+            const height = Math.min(
+                resizeStart.maxHeight,
+                Math.max(minFinanceHeight, resizeStart.height + event.clientY - resizeStart.y)
+            );
+            win.style.width = width + 'px';
+            win.style.height = height + 'px';
+        });
+
+        const stopResize = event => {
+            if (resizeStart && event.pointerId === resizeStart.pointerId) {
+                resizeStart = null;
+            }
+        };
+        resizeHandle.addEventListener('pointerup', stopResize);
+        resizeHandle.addEventListener('pointercancel', stopResize);
+    }
     
     // Cache elements
     const inspectBtn = win.querySelector('#chog-inspect-btn');
@@ -2332,6 +2490,135 @@ function openChogFinance() {
     let chogChartRequestId = 0;
     let chogChartRequestController = null;
     let selectedChogChartDays = 90;
+    let nftCardAnimationQueue = [];
+    let nftCardAnimationFrame = null;
+    let activeNFTCardAnimation = null;
+    const animatedNFTCardKeys = new Set();
+    let transactionHistory = null;
+    let transactionRequest = null;
+    let transactionRequestController = null;
+    let transactionRequestId = 0;
+
+    function cancelNFTCardAnimations() {
+        if (nftCardAnimationFrame !== null) {
+            cancelAnimationFrame(nftCardAnimationFrame);
+            nftCardAnimationFrame = null;
+        }
+        if (activeNFTCardAnimation) {
+            showAllNFTCardText(activeNFTCardAnimation);
+            activeNFTCardAnimation.card.classList.remove('chog-nft-typewriter-active');
+            activeNFTCardAnimation = null;
+        }
+        nftCardAnimationQueue.forEach(showAllNFTCardText);
+        nftCardAnimationQueue = [];
+    }
+
+    function showAllNFTCardText(animation) {
+        animation.entries.forEach(entry => {
+            entry.element.textContent = entry.text;
+        });
+    }
+
+    function finishActiveNFTCardAnimation() {
+        if (!activeNFTCardAnimation) return;
+        showAllNFTCardText(activeNFTCardAnimation);
+        activeNFTCardAnimation.card.classList.remove('chog-nft-typewriter-active');
+        activeNFTCardAnimation = null;
+    }
+
+    function runNextNFTCardAnimation(timestamp) {
+        nftCardAnimationFrame = null;
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            cancelNFTCardAnimations();
+            return;
+        }
+
+        while (!activeNFTCardAnimation && nftCardAnimationQueue.length > 0) {
+            const animation = nftCardAnimationQueue.shift();
+            if (!animation.card.isConnected) {
+                showAllNFTCardText(animation);
+                continue;
+            }
+            animation.startTime = timestamp;
+            activeNFTCardAnimation = animation;
+            animation.card.classList.add('chog-nft-typewriter-active');
+        }
+
+        const activeAnimation = activeNFTCardAnimation;
+        if (!activeAnimation) return;
+
+        const elapsed = timestamp - activeAnimation.startTime;
+        activeAnimation.entries.forEach(entry => {
+            const entryElapsed = elapsed - entry.start;
+            const progress = Math.max(0, Math.min(1, entryElapsed / entry.duration));
+            const visibleCharacters = Math.floor(entry.text.length * progress);
+            entry.element.textContent = entry.text.slice(0, visibleCharacters);
+        });
+
+        if (elapsed >= activeAnimation.duration) {
+            finishActiveNFTCardAnimation();
+            if (nftCardAnimationQueue.length === 0) return;
+        }
+
+        nftCardAnimationFrame = requestAnimationFrame(runNextNFTCardAnimation);
+    }
+
+    function animateNFTCardText(card, nft) {
+        const entries = Array.from(card.querySelectorAll('[data-typewriter-text]')).map(element => ({
+            element,
+            text: element.dataset.typewriterText,
+            section: element.dataset.typewriterSection
+        })).filter(entry => entry.text.length > 0);
+        const totalCharacters = entries.reduce((total, entry) => total + entry.text.length, 0);
+        const animationKey = `${nft.contract}:${nft.tokenId}:${nft.owner || ''}`;
+        const showAll = () => showAllNFTCardText({ entries });
+
+        if (!totalCharacters) {
+            return;
+        }
+
+        if (animatedNFTCardKeys.has(animationKey) ||
+            window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            showAll();
+            animatedNFTCardKeys.add(animationKey);
+            return;
+        }
+
+        animatedNFTCardKeys.add(animationKey);
+        const typingDuration = Math.min(2700, Math.max(1800, totalCharacters * 10));
+        const sectionPause = 100;
+        const sections = entries.reduce((groups, entry) => {
+            let group = groups[groups.length - 1];
+            if (!group || group.name !== entry.section) {
+                group = { name: entry.section, entries: [], characters: 0 };
+                groups.push(group);
+            }
+            group.entries.push(entry);
+            group.characters += entry.text.length;
+            return groups;
+        }, []);
+        let offset = 0;
+        const animationEntries = [];
+        sections.forEach((section, index) => {
+            const sectionDuration = typingDuration * section.characters / totalCharacters;
+            let sectionOffset = offset;
+            section.entries.forEach(entry => {
+                const duration = sectionDuration * entry.text.length / section.characters;
+                animationEntries.push({ ...entry, start: sectionOffset, duration });
+                sectionOffset += duration;
+            });
+            offset += sectionDuration + (index < sections.length - 1 ? sectionPause : 0);
+        });
+        const duration = typingDuration + sectionPause * Math.max(0, sections.length - 1);
+
+        animationEntries.forEach(entry => {
+            entry.element.textContent = '';
+        });
+        nftCardAnimationQueue.push({ card, entries: animationEntries, duration });
+        if (nftCardAnimationFrame === null && !activeNFTCardAnimation) {
+            nftCardAnimationFrame = requestAnimationFrame(runNextNFTCardAnimation);
+        }
+    }
 
     function destroyChogHistoryChart() {
         chogChartRequestId++;
@@ -2346,7 +2633,15 @@ function openChogFinance() {
         chogCandlestickSeries = null;
     }
 
-    win.querySelector('[aria-label="Close"]').addEventListener('click', destroyChogHistoryChart);
+    win.querySelector('[aria-label="Close"]').addEventListener('click', () => {
+        destroyChogHistoryChart();
+        cancelNFTCardAnimations();
+        transactionRequestId++;
+        if (transactionRequestController) {
+            transactionRequestController.abort();
+            transactionRequestController = null;
+        }
+    });
 
     function renderDashboard() {
         destroyChogHistoryChart();
@@ -2639,15 +2934,229 @@ function openChogFinance() {
         const activityHTML = `
             <div style="font-size:11px;color:#000;">
                 <div style="font-weight:bold;margin-bottom:12px;font-size:12px;">ACTIVITY</div>
-                <div style="background:#fff;border:inset 1px #808080;padding:12px;">
-                    <div style="font-size:10px;color:#666;">Transaction history coming in Phase 5.</div>
+                <div style="background:#fff;border:inset 1px #808080;padding:10px;min-width:0;">
+                    <div style="font-size:10px;color:#666;margin-bottom:8px;">Recent Monad transactions (MON amounts shown in MON).</div>
+                    <div id="chog-activity-status" role="status" style="font-size:10px;color:#666;margin-bottom:8px;"></div>
+                    <div id="chog-activity-list" style="display:flex;flex-direction:column;gap:8px;min-width:0;"></div>
                 </div>
             </div>
         `;
         contentArea.innerHTML = activityHTML;
+        const address = walletData && walletData.walletAddress;
+        if (!address) {
+            contentArea.querySelector('#chog-activity-status').textContent = 'Inspect a wallet on the Dashboard to view its recent transactions.';
+            return;
+        }
+        loadActivityTransactions(address);
+    }
+
+    function setActivityStatus(message, isError = false, showRetry = false) {
+        const status = contentArea.querySelector('#chog-activity-status');
+        if (!status) return;
+        status.replaceChildren();
+        const label = document.createElement('span');
+        label.textContent = message;
+        label.style.color = isError ? '#c00' : '#666';
+        status.appendChild(label);
+        if (showRetry) {
+            const retry = document.createElement('button');
+            retry.type = 'button';
+            retry.textContent = 'Retry';
+            retry.style.marginLeft = '8px';
+            retry.addEventListener('click', () => loadActivityTransactions(walletData.walletAddress, true));
+            status.appendChild(retry);
+        }
+    }
+
+    function formatNativeMon(wei) {
+        if (typeof wei !== 'string' || !/^\d+$/.test(wei)) return null;
+        try {
+            const value = BigInt(wei);
+            const whole = (value / 1000000000000000000n).toLocaleString('en-US');
+            const fraction = (value % 1000000000000000000n)
+                .toString()
+                .padStart(18, '0')
+                .replace(/0+$/, '');
+            return fraction ? `${whole}.${fraction} MON` : `${whole} MON`;
+        } catch (error) {
+            return null;
+        }
+    }
+
+    function formatTransactionTimestamp(timestamp) {
+        if (typeof timestamp !== 'string') return 'Time unavailable';
+        const date = new Date(timestamp);
+        if (Number.isNaN(date.getTime())) return 'Time unavailable';
+        return date.toLocaleString();
+    }
+
+    function getTransactionDirection(transaction, address) {
+        if (typeof address !== 'string' || !address) return 'Direction unknown';
+        const normalizedAddress = address.toLowerCase();
+        const from = typeof transaction.from === 'string' ? transaction.from.toLowerCase() : '';
+        const to = typeof transaction.to === 'string' ? transaction.to.toLowerCase() : '';
+        if (from === normalizedAddress && to === normalizedAddress) return 'Self';
+        if (from === normalizedAddress) return 'Sent';
+        if (to === normalizedAddress) return 'Received';
+        return 'Direction unknown';
+    }
+
+    function renderActivityTransactions(container, transactions, address) {
+        const list = container.querySelector('#chog-activity-list');
+        if (!list) return;
+        list.replaceChildren();
+        if (transactions.length === 0) {
+            setActivityStatus('No recent transactions found.');
+            return;
+        }
+
+        setActivityStatus(`${transactions.length} recent transaction${transactions.length === 1 ? '' : 's'}.`);
+        transactions.forEach(transaction => {
+            const card = document.createElement('div');
+            card.style.cssText = 'padding:8px;background:#fff;border:inset 1px #dfdfdf;min-width:0;overflow-wrap:anywhere;';
+
+            const heading = document.createElement('div');
+            heading.style.cssText = 'display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:5px;';
+            const hash = document.createElement('span');
+            hash.style.cssText = 'font-family:monospace;font-weight:bold;';
+            hash.textContent = typeof transaction.hash === 'string' && transaction.hash.length > 16
+                ? `${transaction.hash.slice(0, 10)}…${transaction.hash.slice(-6)}`
+                : (transaction.hash || 'Transaction hash unavailable');
+            heading.appendChild(hash);
+
+            const status = document.createElement('span');
+            status.textContent = typeof transaction.successful === 'boolean'
+                ? (transaction.successful ? 'Success' : 'Failed')
+                : 'Status unavailable';
+            status.style.color = transaction.successful === true
+                ? '#080'
+                : (transaction.successful === false ? '#c00' : '#666');
+            heading.appendChild(status);
+            card.appendChild(heading);
+
+            const details = document.createElement('div');
+            details.style.cssText = 'display:flex;gap:4px 14px;flex-wrap:wrap;color:#333;font-size:10px;';
+            const values = [
+                `Date: ${formatTransactionTimestamp(transaction.timestamp)}`,
+                `Direction: ${getTransactionDirection(transaction, address)}`,
+                `Amount: ${formatNativeMon(transaction.nativeValueWei) || 'MON value unavailable'}`
+            ];
+            values.forEach(value => {
+                const detail = document.createElement('span');
+                detail.textContent = value;
+                details.appendChild(detail);
+            });
+            card.appendChild(details);
+
+            if (typeof transaction.explorerUrl === 'string') {
+                try {
+                    const explorerUrl = new URL(transaction.explorerUrl);
+                    if (explorerUrl.protocol === 'https:' && !explorerUrl.username && !explorerUrl.password) {
+                        const link = document.createElement('a');
+                        link.href = explorerUrl.toString();
+                        link.target = '_blank';
+                        link.rel = 'noopener noreferrer';
+                        link.textContent = 'View on Monad explorer';
+                        link.style.cssText = 'display:inline-block;margin-top:6px;color:#321C72;';
+                        card.appendChild(link);
+                    }
+                } catch (error) {
+                    // Omit malformed optional explorer links.
+                }
+            }
+            list.appendChild(card);
+        });
+    }
+
+    async function loadActivityTransactions(address, forceRefresh = false) {
+        const normalizedAddress = typeof address === 'string' ? address.toLowerCase() : '';
+        const container = contentArea.querySelector('#chog-activity-status');
+        if (!container || !normalizedAddress) return;
+
+        if (!forceRefresh && transactionHistory && transactionHistory.address === normalizedAddress) {
+            if (transactionHistory.status === 'loaded') {
+                renderActivityTransactions(contentArea, transactionHistory.transactions, address);
+                return;
+            }
+            if (transactionHistory.status === 'error') {
+                setActivityStatus(transactionHistory.error, true, true);
+                return;
+            }
+        }
+
+        if (!forceRefresh && transactionRequest && transactionRequest.address === normalizedAddress) {
+            setActivityStatus('Loading recent transactions...');
+            return transactionRequest.promise;
+        }
+
+        if (transactionRequestController) transactionRequestController.abort();
+        const controller = new AbortController();
+        transactionRequestController = controller;
+        const requestId = ++transactionRequestId;
+        transactionHistory = { address: normalizedAddress, status: 'loading' };
+        setActivityStatus('Loading recent transactions...');
+
+        const promise = (async () => {
+            try {
+                const response = await fetch(
+                    '/api/wallet/transactions?address=' + encodeURIComponent(address),
+                    { signal: controller.signal }
+                );
+                let data;
+                try {
+                    data = await response.json();
+                } catch (error) {
+                    throw new Error('The transaction service returned an invalid response.');
+                }
+                if (!response.ok || !data || data.success !== true || !Array.isArray(data.transactions)) {
+                    throw new Error('Unable to load recent transactions.');
+                }
+
+                const transactions = data.transactions.map(transaction => {
+                    const item = transaction && typeof transaction === 'object' ? transaction : {};
+                    return {
+                        hash: typeof item.hash === 'string' ? item.hash : null,
+                        timestamp: typeof item.timestamp === 'string' ? item.timestamp : null,
+                        from: typeof item.from === 'string' ? item.from : null,
+                        to: typeof item.to === 'string' ? item.to : null,
+                        nativeValueWei: typeof item.nativeValueWei === 'string' ? item.nativeValueWei : null,
+                        successful: typeof item.successful === 'boolean' ? item.successful : null,
+                        explorerUrl: typeof item.explorerUrl === 'string' ? item.explorerUrl : null
+                    };
+                });
+
+                if (requestId !== transactionRequestId) return;
+                transactionHistory = { address: normalizedAddress, status: 'loaded', transactions };
+                if (currentSection === 'activity' &&
+                    walletData &&
+                    walletData.walletAddress.toLowerCase() === normalizedAddress) {
+                    renderActivityTransactions(contentArea, transactions, walletData.walletAddress);
+                }
+            } catch (error) {
+                if (controller.signal.aborted || requestId !== transactionRequestId) return;
+                transactionHistory = {
+                    address: normalizedAddress,
+                    status: 'error',
+                    error: error.message || 'Unable to load recent transactions.'
+                };
+                if (currentSection === 'activity' &&
+                    walletData &&
+                    walletData.walletAddress.toLowerCase() === normalizedAddress) {
+                    setActivityStatus(transactionHistory.error, true, true);
+                }
+            } finally {
+                if (requestId === transactionRequestId) {
+                    transactionRequest = null;
+                    transactionRequestController = null;
+                }
+            }
+        })();
+        transactionRequest = { address: normalizedAddress, promise };
+        return promise;
     }
     
     function switchSection(section) {
+        cancelNFTCardAnimations();
         currentSection = section;
         
         // Update button states
@@ -2701,8 +3210,130 @@ function openChogFinance() {
             return `${traitType}: ${value}`;
         });
     }
+
+    function escapeNFTHTML(value) {
+        return String(value).replace(/[&<>"']/g, character => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        })[character]);
+    }
+
+    function openNFTPropertiesWindow(nft) {
+        const tokenId = String(nft.tokenId || 'Unknown');
+        const titleTokenId = tokenId.replace(/[^a-zA-Z0-9._-]/g, '');
+        const title = `NFT Properties — #${titleTokenId}`;
+        const propertiesHTML = `
+            <div style="display:flex;flex-direction:column;gap:10px;padding:10px;background:#c0c0c0;font-size:11px;max-height:65vh;overflow:auto;">
+                <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;">
+                    <div style="width:180px;height:180px;flex:0 0 180px;border:inset 2px #dfdfdf;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+                        <img data-nft-artwork alt="NFT artwork" style="width:100%;height:100%;object-fit:contain;display:none;">
+                        <span data-nft-artwork-fallback style="padding:10px;text-align:center;color:#666;">Artwork unavailable</span>
+                    </div>
+                    <div style="flex:1;min-width:180px;">
+                        <div data-nft-name style="font-weight:bold;font-size:13px;margin-bottom:8px;"></div>
+                        <div style="margin-bottom:6px;"><strong>Token ID:</strong> <span data-nft-token-id></span></div>
+                        <div style="margin-bottom:6px;"><strong>Current owner:</strong> <span data-nft-owner></span></div>
+                        <div style="margin-bottom:4px;"><strong>Contract:</strong></div>
+                        <div data-nft-contract style="font-family:monospace;word-break:break-all;margin-bottom:6px;"></div>
+                        <button type="button" data-nft-copy-contract style="margin-bottom:6px;">Copy contract address</button>
+                        <div data-nft-copy-feedback role="status" style="min-height:14px;margin-bottom:6px;"></div>
+                        <a data-nft-contract-link target="_blank" rel="noopener noreferrer">View contract on MonadScan</a>
+                    </div>
+                </div>
+                <fieldset style="margin:0;">
+                    <legend>Description</legend>
+                    <div data-nft-description style="white-space:pre-wrap;word-break:break-word;"></div>
+                </fieldset>
+                <fieldset style="margin:0;">
+                    <legend>Traits</legend>
+                    <div data-nft-traits></div>
+                </fieldset>
+            </div>
+        `;
+        const win = openWindow(title, propertiesHTML, "assets/images/documents.png");
+        const metadata = nft.metadata || nft.tokenMetadata || null;
+        const artwork = win.querySelector('[data-nft-artwork]');
+        const artworkFallback = win.querySelector('[data-nft-artwork-fallback]');
+        artwork.style.display = 'none';
+        artwork.removeAttribute('src');
+        artworkFallback.style.display = 'block';
+        const imageUrl = metadata && ipfsToGatewayUrl(metadata.image);
+        const contract = typeof nft.contract === 'string' ? nft.contract : '';
+
+        win.querySelector('[data-nft-name]').textContent =
+            metadata && metadata.name ? String(metadata.name) : `NFT #${tokenId}`;
+        win.querySelector('[data-nft-token-id]').textContent = tokenId;
+        win.querySelector('[data-nft-owner]').textContent =
+            typeof nft.owner === 'string' && nft.owner ? nft.owner : 'Current owner unavailable.';
+        win.querySelector('[data-nft-contract]').textContent = contract || 'Contract address unavailable.';
+        win.querySelector('[data-nft-description]').textContent =
+            metadata && typeof metadata.description === 'string' && metadata.description
+                ? metadata.description
+                : (metadata ? 'Description unavailable.' : 'Metadata unavailable.');
+
+        if (imageUrl) {
+            artwork.onload = () => {
+                artwork.style.display = 'block';
+                artworkFallback.style.display = 'none';
+            };
+            artwork.onerror = () => {
+                artwork.style.display = 'none';
+                artworkFallback.textContent = 'Artwork unavailable.';
+                artworkFallback.style.display = 'block';
+            };
+            artwork.src = imageUrl;
+        } else {
+            artworkFallback.textContent = metadata ? 'Artwork unavailable.' : 'Metadata unavailable.';
+        }
+
+        const traitsContainer = win.querySelector('[data-nft-traits]');
+        traitsContainer.replaceChildren();
+        const attributes = metadata && Array.isArray(metadata.attributes) ? metadata.attributes : [];
+        if (attributes.length === 0) {
+            traitsContainer.textContent = metadata ? 'No traits available.' : 'Metadata unavailable.';
+        } else {
+            const traitsList = document.createElement('ul');
+            traitsList.style.cssText = 'margin:0;padding-left:20px;';
+            attributes.forEach(attribute => {
+                const trait = document.createElement('li');
+                const traitType = attribute && (attribute.trait_type || attribute.type) || 'Unknown';
+                const value = attribute && attribute.value !== undefined ? attribute.value : 'N/A';
+                trait.textContent = `${String(traitType)}: ${
+                    typeof value === 'object' && value !== null ? JSON.stringify(value) : String(value)
+                }`;
+                traitsList.appendChild(trait);
+            });
+            traitsContainer.appendChild(traitsList);
+        }
+
+        const contractLink = win.querySelector('[data-nft-contract-link]');
+        if (/^0x[a-fA-F0-9]{40}$/.test(contract)) {
+            contractLink.href = `https://monadscan.com/address/${contract}`;
+        } else {
+            contractLink.removeAttribute('href');
+            contractLink.textContent = 'Contract explorer link unavailable.';
+        }
+
+        win.querySelector('[data-nft-copy-contract]').onclick = async () => {
+            const feedback = win.querySelector('[data-nft-copy-feedback]');
+            if (!contract) {
+                feedback.textContent = 'Contract address unavailable; nothing to copy.';
+                return;
+            }
+            try {
+                await navigator.clipboard.writeText(contract);
+                feedback.textContent = 'Contract address copied.';
+            } catch (error) {
+                feedback.textContent = 'Copy failed. Clipboard access is unavailable.';
+            }
+        };
+    }
     
     async function loadNFTs(address) {
+        cancelNFTCardAnimations();
         try {
             const nftContentDiv = contentArea.querySelector('#nft-content');
             const response = await fetch('/api/wallet/nfts?address=' + encodeURIComponent(address));
@@ -2740,44 +3371,80 @@ function openChogFinance() {
                         const metadata = nft.metadata || {};
                         const nftName = metadata.name || `NFT #${nft.tokenId}`;
                         const imageUrl = ipfsToGatewayUrl(metadata.image);
-                        const traits = formatTraits(metadata.attributes);
+                        const traits = formatTraits(metadata.attributes).slice(0, 3);
+                        const descriptionPreview = metadata.description
+                            ? `${metadata.description.substring(0, 120)}${metadata.description.length > 120 ? '...' : ''}`
+                            : (nft.metadata ? 'Description unavailable.' : 'Metadata unavailable.');
                         
                         // Build trait display
                         let traitHTML = '';
                         if (traits.length > 0) {
                             traitHTML = '<div style="font-size:9px;color:#444;margin-top:6px;line-height:1.3;">';
                             traits.forEach(trait => {
-                                traitHTML += `<div style="margin-bottom:2px;">• ${trait}</div>`;
+                                traitHTML += `<div style="margin-bottom:2px;">• <span data-typewriter-section="traits" data-typewriter-text="${escapeNFTHTML(trait)}"></span></div>`;
                             });
-                            if (metadata.attributes && metadata.attributes.length > 6) {
-                                traitHTML += `<div style="margin-top:3px;color:#666;font-style:italic;">+ ${metadata.attributes.length - 6} more traits</div>`;
+                            if (metadata.attributes && metadata.attributes.length > traits.length) {
+                                traitHTML += `<div style="margin-top:3px;color:#666;font-style:italic;"><span data-typewriter-section="traits" data-typewriter-text="${metadata.attributes.length - traits.length} more traits"></span></div>`;
                             }
                             traitHTML += '</div>';
+                        } else {
+                            const traitFallback = nft.metadata ? 'No traits available.' : 'Metadata unavailable.';
+                            traitHTML = `<div style="font-size:9px;color:#666;margin-top:6px;line-height:1.3;"><span data-typewriter-section="traits" data-typewriter-text="${traitFallback}"></span></div>`;
                         }
                         
                         // Build NFT card
                         nftHTML += `
-                        <div style="margin-bottom:12px;padding:10px;background:#fff;border:inset 2px #dfdfdf;font-size:10px;">
-                            <div style="margin-bottom:8px;">
-                                <div style="font-weight:bold;color:#000;margin-bottom:4px;">${nftName}</div>
-                                <div style="color:#666;font-size:9px;">Token ID: ${nft.tokenId}</div>
+                        <div class="chog-nft-card" data-nft-index="${idx}" tabindex="0" role="button" aria-label="Inspect ${escapeNFTHTML(nftName)}, token ${escapeNFTHTML(nft.tokenId)}">
+                            <div>
+                                ${imageUrl ? `
+                                <img class="chog-nft-artwork" src="${escapeNFTHTML(imageUrl)}" alt="${escapeNFTHTML(nftName)}">
+                                <div class="chog-nft-artwork-fallback" style="display:none;width:100%;aspect-ratio:1;border:1px solid #999;background:#f0f0f0;align-items:center;justify-content:center;text-align:center;color:#666;font-size:9px;">[Artwork unavailable]</div>
+                                ` : `
+                                <div class="chog-nft-artwork-fallback" style="display:flex;width:100%;aspect-ratio:1;border:1px solid #999;background:#f0f0f0;align-items:center;justify-content:center;text-align:center;color:#666;font-size:9px;">[Artwork unavailable]</div>
+                                `}
                             </div>
-                            ${imageUrl ? `
-                            <div style="margin-bottom:8px;border:1px solid #999;background:#f0f0f0;text-align:center;overflow:hidden;width:120px;height:120px;">
-                                <img src="${imageUrl}" alt="${nftName}" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.style.display='none';this.parentElement.innerHTML='<div style=\\"padding:40px 10px;color:#999;\\">[Image unavailable]</div>'">
+                            <div style="min-width:0;">
+                                <div style="font-weight:bold;color:#000;margin-bottom:4px;overflow-wrap:anywhere;"><span data-typewriter-section="name" data-typewriter-text="${escapeNFTHTML(nftName)}"></span></div>
+                                <div style="color:#666;font-size:9px;margin-bottom:5px;">Token ID: ${escapeNFTHTML(nft.tokenId)}</div>
+                                <div style="color:#555;font-size:9px;margin-bottom:5px;line-height:1.3;max-height:40px;overflow:hidden;overflow-wrap:anywhere;">
+                                    <span data-typewriter-section="description" data-typewriter-text="${escapeNFTHTML(descriptionPreview)}"></span>
+                                </div>
+                                ${traitHTML}
+                                <span class="chog-nft-typewriter-cursor" aria-hidden="true">|</span>
+                                <div class="chog-nft-inspect-hint">DOUBLE-CLICK TO INSPECT</div>
                             </div>
-                            ` : ''}
-                            ${metadata.description ? `
-                            <div style="color:#555;font-size:9px;margin-bottom:6px;line-height:1.3;max-height:40px;overflow:hidden;">
-                                ${metadata.description.substring(0, 120)}${metadata.description.length > 120 ? '...' : ''}
-                            </div>
-                            ` : ''}
-                            ${traitHTML}
                         </div>
                         `;
                     });
                     
                     nftContentDiv.innerHTML = nftHTML;
+                    nftContentDiv.querySelectorAll('.chog-nft-card').forEach(card => {
+                        const image = card.querySelector('.chog-nft-artwork');
+                        const imageFallback = card.querySelector('.chog-nft-artwork-fallback');
+                        if (image && imageFallback) {
+                            image.addEventListener('error', () => {
+                                image.style.display = 'none';
+                                imageFallback.style.display = 'flex';
+                            });
+                            if (image.complete && image.naturalWidth === 0) {
+                                image.style.display = 'none';
+                                imageFallback.style.display = 'flex';
+                            }
+                        }
+                        card.addEventListener('dblclick', () => {
+                            const nft = chogGenesisNFTs[Number(card.dataset.nftIndex)];
+                            if (nft) openNFTPropertiesWindow(nft);
+                        });
+                        card.addEventListener('keydown', event => {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                                event.preventDefault();
+                                const nft = chogGenesisNFTs[Number(card.dataset.nftIndex)];
+                                if (nft) openNFTPropertiesWindow(nft);
+                            }
+                        });
+                        const nft = chogGenesisNFTs[Number(card.dataset.nftIndex)];
+                        if (nft) animateNFTCardText(card, nft);
+                    });
                 } else {
                     console.log('No Chog Genesis NFTs found (API returned', data.nfts.length, 'other NFT contract(s))');
                     nftContentDiv.innerHTML = '<div style="font-size:10px;color:#666;">This wallet does not own any Chog Genesis NFTs.</div>';
