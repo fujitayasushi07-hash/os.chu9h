@@ -3458,7 +3458,9 @@ function openChogFinance() {
         } catch (err) {
             console.error('NFT loading exception:', err);
             const nftContentDiv = contentArea.querySelector('#nft-content');
-            nftContentDiv.innerHTML = '<div style="font-size:10px;color:#c00;">Exception loading NFTs: ' + err.message + '</div>';
+            if (nftContentDiv) {
+                nftContentDiv.innerHTML = '<div style="font-size:10px;color:#c00;">Exception loading NFTs: ' + err.message + '</div>';
+            }
         }
     }
     
