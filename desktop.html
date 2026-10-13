@@ -2485,6 +2485,7 @@ function openChogFinance() {
     // Phase 4 Navigation Setup
     let currentSection = 'dashboard';
     let walletData = null;
+    let walletInspectionId = 0;
     let chogHistoryChart = null;
     let chogCandlestickSeries = null;
     let chogChartRequestId = 0;
@@ -3501,7 +3502,8 @@ function openChogFinance() {
     }
     
     // Fetch and update CHOG market data
-    async function updateChogMarket() {
+    async function updateChogMarket(inspectionId) {
+        const isCurrentInspection = () => inspectionId === walletInspectionId;
         try {
             // Query elements dynamically from contentArea
             const chogPriceDisp = contentArea.querySelector('#chog-price-display');
@@ -3512,7 +3514,9 @@ function openChogFinance() {
             const chogMktLoading = contentArea.querySelector('#chog-market-loading');
             
             const marketResp = await fetch('/api/verify/chog-market');
+            if (!isCurrentInspection()) return null;
             const marketData = await marketResp.json();
+            if (!isCurrentInspection()) return null;
             
             if (!marketResp.ok || !marketData.success) {
                 console.error('Market data failed:', marketData.error);
@@ -3542,6 +3546,7 @@ function openChogFinance() {
             
             return marketData.market.priceUsd;
         } catch (err) {
+            if (!isCurrentInspection()) return null;
             console.error('Market data error:', err);
             const chogMktLoading = contentArea.querySelector('#chog-market-loading');
             if (chogMktLoading) chogMktLoading.style.display = 'none';
@@ -3669,6 +3674,7 @@ function openChogFinance() {
     }
     
     async function handleWalletInspection() {
+        const inspectionId = ++walletInspectionId;
         const walletAddressInput = contentArea.querySelector('#chog-wallet-address');
         const inspectButton = contentArea.querySelector('#chog-inspect-btn');
         const loadingDiv = contentArea.querySelector('#chog-loading');
@@ -3720,10 +3726,14 @@ function openChogFinance() {
         try {
             // Fetch balance and tokens
             const balanceResp = await fetch('/api/wallet/balance?address=' + encodeURIComponent(address));
+            if (inspectionId !== walletInspectionId) return;
             const tokensResp = await fetch('/api/wallet/tokens?address=' + encodeURIComponent(address));
+            if (inspectionId !== walletInspectionId) return;
             
             const balanceData = await balanceResp.json();
+            if (inspectionId !== walletInspectionId) return;
             const tokensData = await tokensResp.json();
+            if (inspectionId !== walletInspectionId) return;
             
             if (loadingDiv) loadingDiv.style.display = 'none';
             
@@ -3747,12 +3757,13 @@ function openChogFinance() {
             
             if (chogToken) {
                 if (chogMktLoading) chogMktLoading.style.display = 'block';
-                chogPrice = await updateChogMarket();
+                chogPrice = await updateChogMarket(inspectionId);
             } else {
                 // No CHOG held - still load market data for reference
                 if (chogMktLoading) chogMktLoading.style.display = 'block';
-                await updateChogMarket();
+                await updateChogMarket(inspectionId);
             }
+            if (inspectionId !== walletInspectionId) return;
             
             // Display token holdings if tokens exist
             if (tokensResp.ok && tokensData.success && tokensData.tokens && tokensData.tokens.length > 0) {
@@ -3806,12 +3817,14 @@ function openChogFinance() {
                 
                 // Load historical chart
                 await updateChogChart();
+                if (inspectionId !== walletInspectionId) return;
                 
                 if (chogPanel) chogPanel.style.display = 'block';
             }
             
             if (statusDiv) statusDiv.textContent = 'Wallet inspected';
         } catch (err) {
+            if (inspectionId !== walletInspectionId) return;
             console.error('Wallet inspection error:', err);
             if (loadingDiv) loadingDiv.style.display = 'none';
             if (errorDiv) {
@@ -3820,7 +3833,10 @@ function openChogFinance() {
             }
             if (statusDiv) statusDiv.textContent = 'Error';
         } finally {
-            if (inspectButton) inspectButton.disabled = false;
+            if (inspectionId === walletInspectionId) {
+                if (loadingDiv) loadingDiv.style.display = 'none';
+                if (inspectButton) inspectButton.disabled = false;
+            }
         }
     }
 }
