@@ -2499,6 +2499,7 @@ function openChogFinance() {
     let transactionRequest = null;
     let transactionRequestController = null;
     let transactionRequestId = 0;
+    const nftResponseCache = new Map();
 
     function cancelNFTCardAnimations() {
         if (nftCardAnimationFrame !== null) {
@@ -3346,25 +3347,55 @@ function openChogFinance() {
     
     async function loadNFTs(address) {
         cancelNFTCardAnimations();
+        const normalizedAddress = typeof address === 'string' ? address.toLowerCase() : '';
+        const cachedData = nftResponseCache.get(normalizedAddress);
+        if (cachedData) {
+            renderNFTResponse(cachedData, normalizedAddress);
+            return;
+        }
+
         try {
-            const nftContentDiv = contentArea.querySelector('#nft-content');
             const response = await fetch('/api/wallet/nfts?address=' + encodeURIComponent(address));
             const data = await response.json();
             
             // Handle provider errors
-            if (!data.success) {
-                console.error('NFT API error:', data.error, 'Status:', data.status);
+            if (!response.ok || !data || data.success !== true || !Array.isArray(data.nfts)) {
+                console.error('NFT API error:', data && data.error, 'Status:', data && data.status);
                 
-                if (data.status === 'provider_error') {
+                if (currentSection !== 'nfts' || !walletData ||
+                    walletData.walletAddress.toLowerCase() !== normalizedAddress) return;
+                const nftContentDiv = contentArea.querySelector('#nft-content');
+                if (!nftContentDiv) return;
+                if (data && data.status === 'provider_error') {
                     nftContentDiv.innerHTML = '<div style="font-size:10px;color:#c00;">NFT provider unavailable: ' + (data.error || 'Unknown error') + '</div>';
-                } else if (data.status === 'error') {
+                } else if (data && data.status === 'error') {
                     nftContentDiv.innerHTML = '<div style="font-size:10px;color:#c00;">Error loading NFTs: ' + (data.error || 'Unknown error') + '</div>';
                 } else {
                     nftContentDiv.innerHTML = '<div style="font-size:10px;color:#c00;">Failed to load NFTs.</div>';
                 }
                 return;
             }
-            
+
+            nftResponseCache.set(normalizedAddress, data);
+            renderNFTResponse(data, normalizedAddress);
+        } catch (err) {
+            console.error('NFT loading exception:', err);
+            if (currentSection !== 'nfts' || !walletData ||
+                walletData.walletAddress.toLowerCase() !== normalizedAddress) return;
+            const nftContentDiv = contentArea.querySelector('#nft-content');
+            if (nftContentDiv) {
+                nftContentDiv.innerHTML = '<div style="font-size:10px;color:#c00;">Exception loading NFTs: ' + err.message + '</div>';
+            }
+        }
+    }
+
+    function renderNFTResponse(data, normalizedAddress) {
+        if (currentSection !== 'nfts' || !walletData ||
+            walletData.walletAddress.toLowerCase() !== normalizedAddress) return;
+        const nftContentDiv = contentArea.querySelector('#nft-content');
+        if (!nftContentDiv) return;
+
+        try {
             // Provider succeeded - check if wallet has Chog Genesis NFTs
             if (data.nfts && data.nfts.length > 0) {
                 // Filter for Chog Genesis contract - exact address match, case-insensitive
@@ -3468,8 +3499,9 @@ function openChogFinance() {
             }
         } catch (err) {
             console.error('NFT loading exception:', err);
-            const nftContentDiv = contentArea.querySelector('#nft-content');
-            if (nftContentDiv) {
+            if (currentSection === 'nfts' && walletData &&
+                walletData.walletAddress.toLowerCase() === normalizedAddress &&
+                nftContentDiv.isConnected) {
                 nftContentDiv.innerHTML = '<div style="font-size:10px;color:#c00;">Exception loading NFTs: ' + err.message + '</div>';
             }
         }
