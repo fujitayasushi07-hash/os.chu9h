@@ -2749,7 +2749,7 @@ function openChogFinance() {
             if (newBalanceDiv) newBalanceDiv.style.display = 'block';
             
             // Populate token holdings if available
-            if (walletData.tokens && walletData.tokens.length > 0) {
+            if (Array.isArray(walletData.tokens) && walletData.tokens.length > 0) {
                 if (newTokensEmpty) newTokensEmpty.style.display = 'none';
                 walletData.tokens.forEach(token => {
                     const row = document.createElement('tr');
@@ -2767,11 +2767,16 @@ function openChogFinance() {
                                    '<td style="text-align:right;padding:2px;font-family:monospace;">' + displayValue + '</td>';
                     if (newTokensBody) newTokensBody.appendChild(row);
                 });
-                if (newTokensDiv) newTokensDiv.style.display = 'block';
             } else {
-                if (newTokensEmpty) newTokensEmpty.style.display = 'block';
-                if (newTokensDiv) newTokensDiv.style.display = 'block';
+                if (newTokensEmpty) {
+                    newTokensEmpty.textContent = walletData.tokensAvailable
+                        ? 'No token holdings'
+                        : (walletData.tokensError || 'Token holdings unavailable.');
+                    newTokensEmpty.style.color = walletData.tokensAvailable ? '#666' : '#c00';
+                    newTokensEmpty.style.display = 'block';
+                }
             }
+            if (newTokensDiv) newTokensDiv.style.display = 'block';
             
             // Populate CHOG position if available
             if (walletData.chogBalance && walletData.chogBalance !== '0 CHOG') {
@@ -2791,9 +2796,11 @@ function openChogFinance() {
                 
                 updateChogChart();
             } else {
-                // No CHOG, but still show market data for reference
-                if (newChogBalDisplay) newChogBalDisplay.textContent = '0 CHOG';
-                if (newChogValDisplay) newChogValDisplay.textContent = '$0.00';
+                // Show a zero balance only when token holdings loaded successfully.
+                if (newChogBalDisplay) newChogBalDisplay.textContent =
+                    walletData.tokensAvailable ? '0 CHOG' : 'CHOG balance unavailable';
+                if (newChogValDisplay) newChogValDisplay.textContent =
+                    walletData.tokensAvailable ? '$0.00' : 'Value unavailable';
                 if (newChogPanel) newChogPanel.style.display = 'block';
                 
                 if (newChogPriceDisp) newChogPriceDisp.textContent = walletData.chogPrice;
@@ -2850,7 +2857,9 @@ function openChogFinance() {
                                 <tbody>
             `;
             
-            if (walletData.tokens && walletData.tokens.length > 0) {
+            if (walletData.tokensAvailable === false) {
+                assetsHTML += `<tr><td colspan="3" style="padding:8px;text-align:center;color:#c00;">${walletData.tokensError || 'Token holdings unavailable.'}</td></tr>`;
+            } else if (walletData.tokens && walletData.tokens.length > 0) {
                 walletData.tokens.forEach(token => {
                     let displayValue = token.quote_value;
                     // For CHOG, use live CoinGecko price
@@ -2894,7 +2903,9 @@ function openChogFinance() {
             <div style="font-size:11px;color:#000;">
                 <div style="font-weight:bold;margin-bottom:12px;font-size:12px;">CHOG TOKEN</div>
                 <div style="background:#fff;border:inset 1px #808080;padding:12px;">
-                    ${walletData && walletData.chogBalance ? `
+                    ${walletData && walletData.tokensAvailable === false
+                        ? (walletData.tokensError || 'Token holdings unavailable.')
+                        : walletData && walletData.chogBalance ? `
                         <div style="background:#efe;border:1px solid #0c0;padding:12px;margin-bottom:12px;">
                             <div style="font-size:13px;font-weight:bold;font-family:monospace;margin-bottom:4px;">` + walletData.chogBalance + ` CHOG</div>
                             <div style="font-size:14px;font-weight:bold;color:#080;font-family:monospace;">` + walletData.chogUsdValue + `</div>
@@ -3729,17 +3740,9 @@ function openChogFinance() {
             // Fetch balance and tokens
             const balanceResp = await fetch('/api/wallet/balance?address=' + encodeURIComponent(address));
             if (inspectionId !== walletInspectionId) return;
-            const tokensResp = await fetch('/api/wallet/tokens?address=' + encodeURIComponent(address));
-            if (inspectionId !== walletInspectionId) return;
-            
             const balanceData = await balanceResp.json();
             if (inspectionId !== walletInspectionId) return;
-            const tokensData = await tokensResp.json();
-            if (inspectionId !== walletInspectionId) return;
             
-            if (loadingDiv) loadingDiv.style.display = 'none';
-            
-            // Check if either request failed
             if (!balanceResp.ok || !balanceData.success) {
                 if (errorDiv) {
                     errorDiv.textContent = balanceData.error || 'Failed to fetch wallet data';
@@ -3752,9 +3755,42 @@ function openChogFinance() {
             // Display native balance
             if (balanceValue) balanceValue.textContent = balanceData.balance;
             if (balanceDiv) balanceDiv.style.display = 'block';
+
+            let tokensData = null;
+            let tokensAvailable = false;
+            let tokensError = 'Token holdings unavailable. Please retry.';
+            try {
+                const tokensResp = await fetch('/api/wallet/tokens?address=' + encodeURIComponent(address));
+                if (inspectionId !== walletInspectionId) return;
+                tokensData = await tokensResp.json();
+                if (inspectionId !== walletInspectionId) return;
+                tokensAvailable = tokensResp.ok &&
+                    tokensData &&
+                    tokensData.success === true &&
+                    Array.isArray(tokensData.tokens);
+                if (!tokensAvailable) {
+                    console.error('Wallet tokens request failed:', tokensData && tokensData.error
+                        ? tokensData.error
+                        : 'Unsuccessful or malformed token response');
+                }
+            } catch (error) {
+                if (inspectionId !== walletInspectionId) return;
+                console.error('Wallet tokens request error:', error);
+            }
+            if (loadingDiv) loadingDiv.style.display = 'none';
+
+            if (!tokensAvailable && tokensEmpty) {
+                tokensEmpty.textContent = tokensError;
+                tokensEmpty.style.color = '#c00';
+                tokensEmpty.style.display = 'block';
+                if (tokensDiv) tokensDiv.style.display = 'block';
+            }
             
             // Find CHOG token in holdings and fetch its live price first
-            const chogToken = tokensData.tokens ? tokensData.tokens.find(t => t.contract.toLowerCase() === CHOG_CONTRACT.toLowerCase()) : null;
+            const chogToken = tokensAvailable
+                ? tokensData.tokens.find(t => t && typeof t.contract === 'string' &&
+                    t.contract.toLowerCase() === CHOG_CONTRACT.toLowerCase())
+                : null;
             let chogPrice = null;
             
             if (chogToken) {
@@ -3768,7 +3804,7 @@ function openChogFinance() {
             if (inspectionId !== walletInspectionId) return;
             
             // Display token holdings if tokens exist
-            if (tokensResp.ok && tokensData.success && tokensData.tokens && tokensData.tokens.length > 0) {
+            if (tokensAvailable && tokensData.tokens.length > 0) {
                 if (tokensEmpty) tokensEmpty.style.display = 'none';
                 tokensData.tokens.forEach(token => {
                     const row = document.createElement('tr');
@@ -3788,8 +3824,12 @@ function openChogFinance() {
                     if (tokensBody) tokensBody.appendChild(row);
                 });
                 if (tokensDiv) tokensDiv.style.display = 'block';
-            } else {
+            } else if (tokensAvailable) {
                 if (tokensEmpty) tokensEmpty.style.display = 'block';
+                if (tokensEmpty) {
+                    tokensEmpty.textContent = 'No token holdings';
+                    tokensEmpty.style.color = '#666';
+                }
                 if (tokensDiv) tokensDiv.style.display = 'block';
             }
             
@@ -3797,13 +3837,15 @@ function openChogFinance() {
             storeWalletData({
                 walletAddress: address,
                 monBalance: balanceData.balance,
-                chogBalance: chogToken ? chogToken.balance + ' CHOG' : '0 CHOG',
-                chogUsdValue: chogToken && chogPrice ? formatUSD(Number(String(chogToken.balance).replace(/,/g, "")) * chogPrice) : '$0.00',
+                chogBalance: !tokensAvailable ? null : chogToken ? chogToken.balance + ' CHOG' : '0 CHOG',
+                chogUsdValue: !tokensAvailable ? null : chogToken && chogPrice ? formatUSD(Number(String(chogToken.balance).replace(/,/g, "")) * chogPrice) : '$0.00',
                 chogPrice: chogPrice ? formatUSD(chogPrice) : '$0.00',
                 chogChange: (window.lastChogChange !== undefined ? (window.lastChogChange >= 0 ? '+' : '') + window.lastChogChange.toFixed(2) + '%' : '0%'),
                 marketCap: (window.lastChogMarketCap ? formatLargeNumber(window.lastChogMarketCap) : '$0'),
                 volume: (window.lastChogVolume ? formatLargeNumber(window.lastChogVolume) : '$0'),
-                tokens: tokensData.tokens || [],
+                tokensAvailable,
+                tokens: tokensAvailable ? tokensData.tokens : null,
+                tokensError: tokensAvailable ? null : tokensError,
                 chogPrice_numeric: chogPrice
             });
             
