@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/assets/chog-finance/CHOG%20Window%20Skin.mp4",
+      "destination": "/assets/chog-finance/CHOG-Window-Skin.mp4"
+    }
+  ]
+}

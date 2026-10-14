@@ -1004,9 +1004,33 @@
     background: url("assets/images/media-skin.png") no-repeat center;
     background-size: cover;
     background-color: transparent; /* kill Win98 grey */
+    box-shadow: inset 0 0 0 4px #c0c0c0;
 }
 .window.media-window .window-body {
     background: transparent;
+}
+
+.window.chog-finance-window {
+    background-color: transparent;
+    box-shadow: inset 0 0 0 4px #c0c0c0;
+}
+
+.window.chog-finance-window > .window-body {
+    margin: 0;
+}
+
+.window.chog-finance-window .status-bar {
+    position: relative;
+    z-index: 1;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    color: #d0d0d0;
+    font-size: 10px;
+    padding: 10px 8px 0;
+    transform: translate(-5px, -3px);
+    text-shadow: 1px 1px 2px #000;
+    pointer-events: none;
 }
 
 .task-button {
@@ -2278,12 +2302,16 @@ function openChogFinance() {
     const CHOG_CONTRACT = '0x350035555e10d9afaf1566aaebfced5ba6c27777';
     
     const html = `
-        <div style="display:flex;flex-direction:column;height:100%;background:#c0c0c0;">
-            <div class="menu-bar">
+        <div style="display:flex;flex-direction:column;height:100%;background:transparent;">
+            <div style="position:relative;isolation:isolate;display:flex;flex:1;flex-direction:column;min-height:0;margin-bottom:-21px;overflow:hidden;">
+                <video data-chog-finance-background autoplay loop muted playsinline aria-hidden="true" tabindex="-1" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;z-index:-1;pointer-events:none;">
+                    <source src="assets/chog-finance/CHOG%20Window%20Skin.mp4" type="video/mp4">
+                </video>
+            <div class="menu-bar" style="background:transparent;">
                 <span>File</span><span>Edit</span><span>View</span><span>Navigate</span><span>Help</span>
             </div>
             
-            <div style="display:flex;gap:4px;padding:8px;background:#c0c0c0;border-bottom:2px outset #fff;align-items:center;font-size:11px;">
+            <div style="display:flex;gap:4px;padding:8px;background:transparent;border-bottom:2px outset #fff;align-items:center;font-size:11px;">
                 <button class="chog-nav-btn" data-section="dashboard" style="padding:4px 8px;cursor:pointer;min-width:60px;">DASHBOARD</button>
                 <button class="chog-nav-btn" data-section="assets" style="padding:4px 8px;cursor:pointer;min-width:60px;">ASSETS</button>
                 <button class="chog-nav-btn" data-section="chog" style="padding:4px 8px;cursor:pointer;min-width:60px;">CHOG</button>
@@ -2291,7 +2319,7 @@ function openChogFinance() {
                 <button class="chog-nav-btn" data-section="activity" style="padding:4px 8px;cursor:pointer;min-width:60px;">ACTIVITY</button>
             </div>
             
-            <div style="flex:1;padding:16px;overflow-y:auto;" id="chog-content-area">
+            <div style="flex:1;padding:16px;margin-bottom:21px;overflow-y:auto;" id="chog-content-area">
                 <div style="font-size:14px;font-weight:bold;margin-bottom:16px;color:#000;">CHOG FINANCE</div>
                 
                 <div style="background:#fff;border:inset 2px #dfdfdf;padding:12px;margin-bottom:12px;">
@@ -2371,17 +2399,36 @@ function openChogFinance() {
                     <div style="font-size:11px;color:#000;"><strong>Status:</strong> <span id="chog-status">Ready</span></div>
                 </div>
             </div>
+            </div>
             
-            <div class="status-bar" style="font-size:11px;color:#000;">CHOG Finance v0.4</div>
+            <div class="status-bar">CHOG Finance v0.9</div>
         </div>
     `;
     
     const win = openWindow("CHOG Finance", html, "assets/images/documents.png");
+    win.classList.add('chog-finance-window');
     if (window.innerWidth > 768) {
         win.style.width = '620px';
         win.style.height = '480px';
     }
     win.style.resize = 'none';
+
+    const backgroundVideo = win.querySelector('[data-chog-finance-background]');
+    if (backgroundVideo && !backgroundVideo.dataset.initialized) {
+        backgroundVideo.dataset.initialized = 'true';
+        backgroundVideo.addEventListener('error', () => {
+            backgroundVideo.hidden = true;
+        });
+
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            backgroundVideo.pause();
+            backgroundVideo.hidden = true;
+        } else {
+            backgroundVideo.play().catch(() => {
+                backgroundVideo.hidden = true;
+            });
+        }
+    }
     
     // Cache elements
     const inspectBtn = win.querySelector('#chog-inspect-btn');
