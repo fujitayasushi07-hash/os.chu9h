@@ -1033,6 +1033,106 @@
     pointer-events: none;
 }
 
+.window.chog-finance-window .chog-terminal-panel {
+    background: rgba(33, 16, 31, 0.82);
+    border: 1px solid #D53F7C;
+    color: #E8DDE8;
+}
+
+.window.chog-finance-window .chog-terminal-panel-heading,
+.window.chog-finance-window .chog-network-panel strong,
+.window.chog-finance-window .chog-terminal-panel strong,
+.window.chog-finance-window .chog-terminal-heading {
+    color: #D53F7C;
+}
+
+.window.chog-finance-window .chog-terminal-view {
+    color: #E8DDE8;
+}
+
+.window.chog-finance-window #chog-balance-display {
+    color: #000;
+}
+
+.window.chog-finance-window .chog-token-balance-card {
+    background: #efe;
+    border: 1px solid #0c0;
+    color: #000;
+}
+
+.window.chog-finance-window .chog-token-balance-card > div {
+    color: #000;
+}
+
+.window.chog-finance-window .chog-token-balance-card > div + div {
+    color: #080;
+}
+
+.window.chog-finance-window .chog-market-card {
+    background: #e8f0ff;
+    border: 1px solid #008;
+    color: #000;
+}
+
+.window.chog-finance-window .chog-market-card > div,
+.window.chog-finance-window .chog-market-card strong {
+    color: #000;
+}
+
+.window.chog-finance-window .chog-market-card .chog-price-change-positive {
+    color: #080;
+}
+
+.window.chog-finance-window .chog-market-card .chog-price-change-negative {
+    color: #c00;
+}
+
+.window.chog-finance-window .chog-assets-token-table th,
+.window.chog-finance-window .chog-assets-token-table td {
+    background: rgba(33, 16, 31, 0.88);
+    border: 1px solid rgba(213, 63, 124, 0.55) !important;
+    color: #E8DDE8;
+}
+
+.window.chog-finance-window .chog-assets-token-table th {
+    background: rgba(92, 26, 75, 0.96);
+    border-color: #D53F7C !important;
+}
+
+.window.chog-finance-window .chog-chart-container {
+    background: rgba(33, 16, 31, 0.82) !important;
+    border: 1px solid #D53F7C !important;
+}
+
+.window.chog-finance-window .chog-nft-card {
+    background: rgba(33, 16, 31, 0.82);
+    border: 1px solid #D53F7C;
+    color: #E8DDE8;
+}
+
+.window.chog-finance-window .chog-nft-card:hover {
+    border-color: #D53F7C;
+}
+
+.window.chog-finance-window .chog-nft-card > div:last-child div {
+    color: #E8DDE8 !important;
+}
+
+.window.chog-finance-window .chog-nft-card > div:last-child > div:first-child {
+    color: #D53F7C !important;
+}
+
+.window.chog-finance-window .chog-nft-inspect-hint,
+.window.chog-finance-window .chog-nft-typewriter-cursor {
+    color: #D53F7C;
+}
+
+.window.chog-finance-window .chog-activity-card {
+    background: rgba(33, 16, 31, 0.82);
+    border: 1px solid #D53F7C;
+    color: #E8DDE8;
+}
+
 .task-button {
     display: flex;
     align-items: center;
@@ -2318,8 +2418,8 @@ function openChogFinance() {
             <div style="flex:1;padding:16px;margin-bottom:21px;overflow-y:auto;" id="chog-content-area">
                 <div style="font-size:14px;font-weight:bold;margin-bottom:16px;color:#000;">CHOG FINANCE</div>
                 
-                <div style="background:#fff;border:inset 2px #dfdfdf;padding:12px;margin-bottom:12px;">
-                    <div style="font-size:11px;font-weight:bold;margin-bottom:8px;color:#000;">WALLET INSPECTOR</div>
+                <div class="chog-terminal-panel" style="padding:12px;margin-bottom:12px;">
+                    <div class="chog-terminal-panel-heading" style="font-size:11px;font-weight:bold;margin-bottom:8px;">WALLET INSPECTOR</div>
                     
                     <div style="margin-bottom:8px;">
                         <input type="text" id="chog-wallet-address" placeholder="Enter Monad wallet address..." style="width:100%;padding:4px 6px;font-size:11px;box-sizing:border-box;border:inset 1px #808080;font-family:monospace;">
@@ -2354,13 +2454,13 @@ function openChogFinance() {
                         <div id="chog-tokens-empty" style="font-size:10px;color:#666;margin-top:4px;">No token holdings</div>
                     </div>
                     
-                    <div style="font-size:10px;color:#333;line-height:1.4;margin-bottom:8px;">
+                    <div style="font-size:10px;line-height:1.4;margin-bottom:8px;">
                         Read-only wallet inspection. No wallet connection required.
                     </div>
                 </div>
                 
-                <div id="chog-position-panel" style="display:none;background:#fff;border:inset 2px #dfdfdf;padding:12px;margin-bottom:12px;">
-                    <div style="font-size:12px;font-weight:bold;margin-bottom:8px;color:#000;">CHOG</div>
+                <div id="chog-position-panel" class="chog-terminal-panel" style="display:none;padding:12px;margin-bottom:12px;">
+                    <div class="chog-terminal-panel-heading" style="font-size:12px;font-weight:bold;margin-bottom:8px;">CHOG</div>
                     
                     <div style="background:#efe;border:1px solid #0c0;padding:8px;margin-bottom:8px;">
                         <div style="font-size:13px;font-family:monospace;font-weight:bold;" id="chog-balance-display">0 CHOG</div>
@@ -2377,7 +2477,7 @@ function openChogFinance() {
                         <div style="color:#000;"><strong>24H Volume:</strong> <span id="chog-volume-display">$0</span></div>
                     </div>
                     
-                    <div id="chog-chart-container" style="display:none;border:inset 1px #808080;background:#fff;padding:8px;margin-bottom:8px;overflow:hidden;">
+                    <div id="chog-chart-container" class="chog-chart-container" style="display:none;border:inset 1px #808080;background:#fff;padding:8px;margin-bottom:8px;overflow:hidden;">
                         <div class="chog-chart-timeframes" style="display:flex;gap:4px;margin-bottom:6px;">
                             <button type="button" data-chog-days="1" style="padding:2px 8px;font-size:10px;cursor:pointer;">1D</button>
                             <button type="button" data-chog-days="7" style="padding:2px 8px;font-size:10px;cursor:pointer;">7D</button>
@@ -2390,9 +2490,9 @@ function openChogFinance() {
                     </div>
                 </div>
                 
-                <div style="border:inset 1px #808080;padding:8px;background:#fff;margin-bottom:12px;">
-                    <div style="font-size:11px;color:#000;margin-bottom:4px;"><strong>Network:</strong> Monad</div>
-                    <div style="font-size:11px;color:#000;"><strong>Status:</strong> <span id="chog-status">Ready</span></div>
+                <div class="chog-terminal-panel chog-network-panel" style="padding:8px;margin-bottom:12px;">
+                    <div style="font-size:11px;margin-bottom:4px;"><strong>Network:</strong> Monad</div>
+                    <div style="font-size:11px;"><strong>Status:</strong> <span id="chog-status">Ready</span></div>
                 </div>
             </div>
             </div>
@@ -2617,8 +2717,8 @@ function openChogFinance() {
 
         const dashboardHTML = `
             <div style="font-size:11px;color:#000;">
-                <div style="background:#fff;border:inset 2px #dfdfdf;padding:12px;margin-bottom:12px;">
-                    <div style="font-size:11px;font-weight:bold;margin-bottom:8px;color:#000;">WALLET INSPECTOR</div>
+                <div class="chog-terminal-panel" style="padding:12px;margin-bottom:12px;">
+                    <div class="chog-terminal-panel-heading" style="font-size:11px;font-weight:bold;margin-bottom:8px;">WALLET INSPECTOR</div>
                     
                     <div style="margin-bottom:8px;">
                         <input type="text" id="chog-wallet-address" placeholder="Enter Monad wallet address..." style="width:100%;padding:4px 6px;font-size:11px;box-sizing:border-box;border:inset 1px #808080;font-family:monospace;">
@@ -2650,13 +2750,13 @@ function openChogFinance() {
                         <div id="chog-tokens-empty" style="font-size:10px;color:#666;margin-top:4px;">No token holdings</div>
                     </div>
                     
-                    <div style="font-size:10px;color:#333;line-height:1.4;margin-bottom:8px;">
+                    <div style="font-size:10px;line-height:1.4;margin-bottom:8px;">
                         Read-only wallet inspection. No wallet connection required.
                     </div>
                 </div>
                 
-                <div id="chog-position-panel" style="display:none;background:#fff;border:inset 2px #dfdfdf;padding:12px;margin-bottom:12px;">
-                    <div style="font-size:12px;font-weight:bold;margin-bottom:8px;color:#000;">CHOG</div>
+                <div id="chog-position-panel" class="chog-terminal-panel" style="display:none;padding:12px;margin-bottom:12px;">
+                    <div class="chog-terminal-panel-heading" style="font-size:12px;font-weight:bold;margin-bottom:8px;">CHOG</div>
                     
                     <div style="background:#efe;border:1px solid #0c0;padding:8px;margin-bottom:8px;">
                         <div style="font-size:13px;font-family:monospace;font-weight:bold;" id="chog-balance-display">0 CHOG</div>
@@ -2673,7 +2773,7 @@ function openChogFinance() {
                         <div style="color:#000;"><strong>24H Volume:</strong> <span id="chog-volume-display">$0</span></div>
                     </div>
                     
-                    <div id="chog-chart-container" style="display:none;border:inset 1px #808080;background:#fff;padding:8px;margin-bottom:8px;overflow:hidden;">
+                    <div id="chog-chart-container" class="chog-chart-container" style="display:none;border:inset 1px #808080;background:#fff;padding:8px;margin-bottom:8px;overflow:hidden;">
                         <div class="chog-chart-timeframes" style="display:flex;gap:4px;margin-bottom:6px;">
                             <button type="button" data-chog-days="1" style="padding:2px 8px;font-size:10px;cursor:pointer;">1D</button>
                             <button type="button" data-chog-days="7" style="padding:2px 8px;font-size:10px;cursor:pointer;">7D</button>
@@ -2686,9 +2786,9 @@ function openChogFinance() {
                     </div>
                 </div>
                 
-                <div style="border:inset 1px #808080;padding:8px;background:#fff;margin-bottom:12px;">
-                    <div style="font-size:11px;color:#000;margin-bottom:4px;"><strong>Network:</strong> Monad</div>
-                    <div style="font-size:11px;color:#000;"><strong>Status:</strong> <span id="chog-status">Ready</span></div>
+                <div class="chog-terminal-panel chog-network-panel" style="padding:8px;margin-bottom:12px;">
+                    <div style="font-size:11px;margin-bottom:4px;"><strong>Network:</strong> Monad</div>
+                    <div style="font-size:11px;"><strong>Status:</strong> <span id="chog-status">Ready</span></div>
                 </div>
             </div>
         `;
@@ -2798,9 +2898,9 @@ function openChogFinance() {
     
     function renderAssets() {
         let assetsHTML = `
-            <div style="font-size:11px;color:#000;">
-                <div style="font-weight:bold;margin-bottom:12px;font-size:12px;">ASSETS</div>
-                <div style="background:#fff;border:inset 1px #808080;padding:12px;">
+            <div class="chog-terminal-view" style="font-size:11px;">
+                <div class="chog-terminal-heading" style="font-weight:bold;margin-bottom:12px;font-size:12px;">ASSETS</div>
+                <div class="chog-terminal-panel" style="padding:12px;">
                     <div id="assets-content" style="font-size:10px;">
         `;
         
@@ -2814,7 +2914,7 @@ function openChogFinance() {
                         
                         <div>
                             <div style="margin-bottom:6px;"><strong>Token Holdings:</strong></div>
-                            <table style="width:100%;border-collapse:collapse;font-size:9px;font-family:monospace;">
+                            <table class="chog-assets-token-table" style="width:100%;border-collapse:collapse;font-size:9px;font-family:monospace;">
                                 <thead>
                                     <tr style="border-bottom:1px solid #ddd;">
                                         <th style="text-align:left;padding:2px;border-right:1px solid #ddd;">Symbol</th>
@@ -2868,19 +2968,19 @@ function openChogFinance() {
     
     function renderChogSection() {
         const chogHTML = `
-            <div style="font-size:11px;color:#000;">
-                <div style="font-weight:bold;margin-bottom:12px;font-size:12px;">CHOG TOKEN</div>
-                <div style="background:#fff;border:inset 1px #808080;padding:12px;">
+            <div class="chog-terminal-view" style="font-size:11px;">
+                <div class="chog-terminal-heading" style="font-weight:bold;margin-bottom:12px;font-size:12px;">CHOG TOKEN</div>
+                <div class="chog-terminal-panel" style="padding:12px;">
                     ${walletData && walletData.tokensAvailable === false
                         ? (walletData.tokensError || 'Token holdings unavailable.')
                         : walletData && walletData.chogBalance ? `
-                        <div style="background:#efe;border:1px solid #0c0;padding:12px;margin-bottom:12px;">
+                        <div class="chog-token-balance-card" style="padding:12px;margin-bottom:12px;">
                             <div style="font-size:13px;font-weight:bold;font-family:monospace;margin-bottom:4px;">` + walletData.chogBalance + ` CHOG</div>
-                            <div style="font-size:14px;font-weight:bold;color:#080;font-family:monospace;">` + walletData.chogUsdValue + `</div>
+                            <div style="font-size:14px;font-weight:bold;font-family:monospace;">` + walletData.chogUsdValue + `</div>
                         </div>
-                        <div style="font-size:10px;background:#e8f0ff;border:1px solid #008;padding:8px;">
+                        <div class="chog-market-card" style="font-size:10px;padding:8px;">
                             <div style="margin-bottom:4px;"><strong>Price:</strong> ` + (walletData.chogPrice || '$0.00') + `</div>
-                            <div style="margin-bottom:4px;"><strong>24H Change:</strong> ` + (walletData.chogChange || '0%') + `</div>
+                            <div style="margin-bottom:4px;"><strong>24H Change:</strong> <span class="` + (window.lastChogChange < 0 ? 'chog-price-change-negative' : 'chog-price-change-positive') + `">` + (walletData.chogChange || '0%') + `</span></div>
                             <div style="margin-bottom:4px;"><strong>Market Cap:</strong> ` + (walletData.marketCap || '$0') + `</div>
                             <div><strong>24H Volume:</strong> ` + (walletData.volume || '$0') + `</div>
                         </div>
@@ -2893,9 +2993,9 @@ function openChogFinance() {
     
     function renderNFTs() {
         const nftsHTML = `
-            <div style="font-size:11px;color:#000;">
-                <div style="font-weight:bold;margin-bottom:12px;font-size:12px;">CHOG NFT EXPLORER</div>
-                <div style="background:#fff;border:inset 1px #808080;padding:12px;">
+            <div class="chog-terminal-view" style="font-size:11px;">
+                <div class="chog-terminal-heading" style="font-weight:bold;margin-bottom:12px;font-size:12px;">CHOG NFT EXPLORER</div>
+                <div class="chog-terminal-panel" style="padding:12px;">
                     <div id="nft-content" style="font-size:10px;">
                         ${walletData ? 'Loading CHOG NFTs...' : 'Load wallet data from Dashboard first.'}
                     </div>
@@ -2912,11 +3012,11 @@ function openChogFinance() {
     
     function renderActivity() {
         const activityHTML = `
-            <div style="font-size:11px;color:#000;">
-                <div style="font-weight:bold;margin-bottom:12px;font-size:12px;">ACTIVITY</div>
-                <div style="background:#fff;border:inset 1px #808080;padding:10px;min-width:0;">
-                    <div style="font-size:10px;color:#666;margin-bottom:8px;">Recent Monad transactions (MON amounts shown in MON).</div>
-                    <div id="chog-activity-status" role="status" style="font-size:10px;color:#666;margin-bottom:8px;"></div>
+            <div class="chog-terminal-view" style="font-size:11px;">
+                <div class="chog-terminal-heading" style="font-weight:bold;margin-bottom:12px;font-size:12px;">ACTIVITY</div>
+                <div class="chog-terminal-panel" style="padding:10px;min-width:0;">
+                    <div style="font-size:10px;margin-bottom:8px;">Recent Monad transactions (MON amounts shown in MON).</div>
+                    <div id="chog-activity-status" role="status" style="font-size:10px;margin-bottom:8px;"></div>
                     <div id="chog-activity-list" style="display:flex;flex-direction:column;gap:8px;min-width:0;"></div>
                 </div>
             </div>
@@ -2936,7 +3036,7 @@ function openChogFinance() {
         status.replaceChildren();
         const label = document.createElement('span');
         label.textContent = message;
-        label.style.color = isError ? '#c00' : '#666';
+        label.style.color = isError ? '#c00' : '#E8DDE8';
         status.appendChild(label);
         if (showRetry) {
             const retry = document.createElement('button');
@@ -2993,7 +3093,8 @@ function openChogFinance() {
         setActivityStatus(`${transactions.length} recent transaction${transactions.length === 1 ? '' : 's'}.`);
         transactions.forEach(transaction => {
             const card = document.createElement('div');
-            card.style.cssText = 'padding:8px;background:#fff;border:inset 1px #dfdfdf;min-width:0;overflow-wrap:anywhere;';
+            card.className = 'chog-activity-card';
+            card.style.cssText = 'padding:8px;min-width:0;overflow-wrap:anywhere;';
 
             const heading = document.createElement('div');
             heading.style.cssText = 'display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:5px;';
@@ -3010,12 +3111,12 @@ function openChogFinance() {
                 : 'Status unavailable';
             status.style.color = transaction.successful === true
                 ? '#080'
-                : (transaction.successful === false ? '#c00' : '#666');
+                : (transaction.successful === false ? '#c00' : '#E8DDE8');
             heading.appendChild(status);
             card.appendChild(heading);
 
             const details = document.createElement('div');
-            details.style.cssText = 'display:flex;gap:4px 14px;flex-wrap:wrap;color:#333;font-size:10px;';
+            details.style.cssText = 'display:flex;gap:4px 14px;flex-wrap:wrap;font-size:10px;';
             const values = [
                 `Date: ${formatTransactionTimestamp(transaction.timestamp)}`,
                 `Direction: ${getTransactionDirection(transaction, address)}`,
@@ -3037,7 +3138,7 @@ function openChogFinance() {
                         link.target = '_blank';
                         link.rel = 'noopener noreferrer';
                         link.textContent = 'View on Monad explorer';
-                        link.style.cssText = 'display:inline-block;margin-top:6px;color:#321C72;';
+                        link.style.cssText = 'display:inline-block;margin-top:6px;color:#D53F7C;';
                         card.appendChild(link);
                     }
                 } catch (error) {
@@ -3638,25 +3739,25 @@ function openChogFinance() {
                     autoSize: true,
                     height: 260,
                     layout: {
-                        background: { type: 'solid', color: '#FFFFFF' },
-                        textColor: '#202124'
+                        background: { type: 'solid', color: '#21101F' },
+                        textColor: '#E8DDE8'
                     },
                     grid: {
-                        vertLines: { color: '#E6E6E6' },
-                        horzLines: { color: '#E6E6E6' }
+                        vertLines: { color: '#4A2B5C' },
+                        horzLines: { color: '#4A2B5C' }
                     },
-                    timeScale: { borderColor: '#B8B8B8' },
-                    rightPriceScale: { borderColor: '#B8B8B8' }
+                    timeScale: { borderColor: '#6B3A70' },
+                    rightPriceScale: { borderColor: '#6B3A70' }
                 });
                 chogCandlestickSeries = chogHistoryChart.addSeries(
                     window.LightweightCharts.CandlestickSeries,
                     {
-                        upColor: '#321C72',
-                        downColor: '#D53F7C',
-                        borderUpColor: '#321C72',
-                        borderDownColor: '#D53F7C',
-                        wickUpColor: '#321C72',
-                        wickDownColor: '#D53F7C',
+                        upColor: '#A855F7',
+                        downColor: '#FF2D95',
+                        borderUpColor: '#A855F7',
+                        borderDownColor: '#FF2D95',
+                        wickUpColor: '#A855F7',
+                        wickDownColor: '#FF2D95',
                         priceFormat: {
                             type: 'price',
                             precision: 8,
