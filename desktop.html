@@ -1104,6 +1104,77 @@
     border: 1px solid #D53F7C !important;
 }
 
+.window.chog-finance-window .chog-finance-loader {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    background: transparent;
+    color: #E8DDE8;
+    pointer-events: auto;
+}
+
+.window.chog-finance-window .chog-finance-loader[hidden] {
+    display: none;
+}
+
+.window.chog-finance-window .chog-nav-strip[hidden] {
+    display: none !important;
+}
+
+.window.chog-finance-window .chog-finance-loader img {
+    width: min(300px, 65vw);
+    height: auto;
+    display: block;
+    align-self: center;
+    image-rendering: auto;
+    transform: translateY(25px);
+}
+
+.window.chog-finance-window .chog-finance-loader-details {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    transform: translate(0px, -20px);
+}
+
+.window.chog-finance-window .chog-finance-loader-track {
+    width: min(220px, 65vw);
+    height: 14px;
+    padding: 2px;
+    border: 1px solid #D53F7C;
+    background: rgba(33, 16, 31, 0.82);
+    box-sizing: border-box;
+}
+
+.window.chog-finance-window .chog-finance-loader-progress {
+    width: 0;
+    height: 100%;
+    background: repeating-linear-gradient(
+        90deg,
+        #6D28D9 0 8px,
+        #A855F7 8px 16px,
+        #EC4899 16px 24px,
+        #A855F7 24px 32px
+    );
+    animation: chog-finance-load-progress 3.7s steps(37, end) forwards;
+}
+
+@keyframes chog-finance-load-progress {
+    to { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .window.chog-finance-window .chog-finance-loader-progress {
+        animation: none;
+    }
+}
+
 .window.chog-finance-window .chog-nft-card {
     background: rgba(33, 16, 31, 0.82);
     border: 1px solid #D53F7C;
@@ -2407,7 +2478,16 @@ function openChogFinance() {
                 <video data-chog-finance-background autoplay loop muted playsinline aria-hidden="true" tabindex="-1" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;z-index:-1;pointer-events:none;">
                     <source src="assets/chog-finance/CHOG-Window-Skin.mp4" type="video/mp4">
                 </video>
-            <div style="display:flex;justify-content:center;gap:4px;padding:8px;background:transparent;border-bottom:2px outset #fff;align-items:center;font-size:11px;">
+                <div class="chog-finance-loader" data-chog-finance-loader role="status" aria-live="polite">
+                    <img src="assets/chog-finance/chog-load-animation.gif" alt="">
+                    <div class="chog-finance-loader-details">
+                        <div class="chog-finance-loader-track" aria-hidden="true">
+                            <div class="chog-finance-loader-progress"></div>
+                        </div>
+                        <span>Initializing CHOG Finance...</span>
+                    </div>
+                </div>
+            <div class="chog-nav-strip" hidden style="display:flex;justify-content:center;gap:4px;padding:8px;background:transparent;border-bottom:2px outset #fff;align-items:center;font-size:11px;">
                 <button class="chog-nav-btn" data-section="dashboard" style="padding:4px 8px;cursor:pointer;min-width:60px;">DASHBOARD</button>
                 <button class="chog-nav-btn" data-section="assets" style="padding:4px 8px;cursor:pointer;min-width:60px;">ASSETS</button>
                 <button class="chog-nav-btn" data-section="chog" style="padding:4px 8px;cursor:pointer;min-width:60px;">CHOG</button>
@@ -2415,7 +2495,7 @@ function openChogFinance() {
                 <button class="chog-nav-btn" data-section="activity" style="padding:4px 8px;cursor:pointer;min-width:60px;">ACTIVITY</button>
             </div>
             
-            <div style="flex:1;padding:16px;margin-bottom:21px;overflow-y:auto;" id="chog-content-area">
+            <div hidden style="flex:1;padding:16px;margin-bottom:21px;overflow-y:auto;" id="chog-content-area">
                 <div style="font-size:14px;font-weight:bold;margin-bottom:16px;color:#000;">CHOG FINANCE</div>
                 
                 <div class="chog-terminal-panel" style="padding:12px;margin-bottom:12px;">
@@ -2497,7 +2577,7 @@ function openChogFinance() {
             </div>
             </div>
             
-            <div class="status-bar">CHOG Finance v0.9</div>
+            <div class="status-bar">CHOG Finance v1.7</div>
         </div>
     `;
     
@@ -2548,6 +2628,36 @@ function openChogFinance() {
     const chogVolumeDisplay = win.querySelector('#chog-volume-display');
     const contentArea = win.querySelector('#chog-content-area');
     const navButtons = win.querySelectorAll('.chog-nav-btn');
+    const financeLoader = win.querySelector('[data-chog-finance-loader]');
+    const financeNavigation = win.querySelector('.chog-nav-strip');
+    const financeLoadingAudio = new Audio('assets/chog-finance/chog-load-sound.mp3');
+    let financeLoadingTimer = null;
+    financeNavigation.style.display = 'none';
+    contentArea.style.display = 'none';
+    const stopFinanceLoadingAudio = () => {
+        financeLoadingAudio.pause();
+        financeLoadingAudio.currentTime = 0;
+    };
+    const finishFinanceLoading = () => {
+        if (financeLoadingTimer !== null) {
+            clearTimeout(financeLoadingTimer);
+            financeLoadingTimer = null;
+        }
+        stopFinanceLoadingAudio();
+        if (financeLoader) financeLoader.hidden = true;
+        if (financeNavigation) {
+            financeNavigation.hidden = false;
+            financeNavigation.style.display = 'flex';
+        }
+        contentArea.hidden = false;
+        contentArea.style.display = '';
+    };
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        finishFinanceLoading();
+    } else {
+        financeLoadingAudio.play().catch(() => {});
+        financeLoadingTimer = setTimeout(finishFinanceLoading, 3700);
+    }
     
     // Phase 4 Navigation Setup
     let currentSection = 'dashboard';
@@ -2703,6 +2813,11 @@ function openChogFinance() {
     }
 
     win.querySelector('[aria-label="Close"]').addEventListener('click', () => {
+        if (financeLoadingTimer !== null) {
+            clearTimeout(financeLoadingTimer);
+            financeLoadingTimer = null;
+        }
+        stopFinanceLoadingAudio();
         destroyChogHistoryChart();
         cancelNFTCardAnimations();
         transactionRequestId++;
