@@ -2377,87 +2377,11 @@ function openChogFinance() {
     `;
     
     const win = openWindow("CHOG Finance", html, "assets/images/documents.png");
-    const desktop = document.getElementById('desktop');
-    const mobileWidthLimit = window.innerWidth <= 768 ? window.innerWidth - 20 : desktop.clientWidth;
-    const minFinanceWidth = Math.min(480, desktop.clientWidth, mobileWidthLimit);
-    const mobileHeightLimit = window.innerWidth <= 768 ? window.innerHeight * 0.7 : desktop.clientHeight;
-    const minFinanceHeight = Math.min(360, desktop.clientHeight, mobileHeightLimit);
-    win.style.minWidth = minFinanceWidth + 'px';
-    win.style.minHeight = minFinanceHeight + 'px';
-
-    if (!win.querySelector('[data-finance-resize-handle]')) {
-        const resizeHandle = document.createElement('div');
-        resizeHandle.dataset.financeResizeHandle = 'true';
-        resizeHandle.setAttribute('role', 'separator');
-        resizeHandle.setAttribute('aria-label', 'Resize CHOG Finance window');
-        resizeHandle.title = 'Resize window';
-        resizeHandle.style.cssText = [
-            'position:absolute',
-            'right:2px',
-            'bottom:2px',
-            'width:16px',
-            'height:16px',
-            'z-index:10',
-            'cursor:nwse-resize',
-            'touch-action:none',
-            'background:repeating-linear-gradient(135deg,transparent 0 3px,#808080 3px 4px,#fff 4px 5px)'
-        ].join(';');
-        win.appendChild(resizeHandle);
-
-        let resizeStart = null;
-        resizeHandle.addEventListener('pointerdown', event => {
-            event.preventDefault();
-            event.stopPropagation();
-
-            const bounds = desktop.getBoundingClientRect();
-            const rect = win.getBoundingClientRect();
-            const cssMaxHeight = parseFloat(getComputedStyle(win).maxHeight);
-            const left = Math.min(Math.max(rect.left, bounds.left), bounds.right - minFinanceWidth);
-            const top = Math.min(Math.max(rect.top, bounds.top), bounds.bottom - minFinanceHeight);
-            win.style.transform = 'none';
-            win.style.left = left + 'px';
-            win.style.top = top + 'px';
-            win.style.width = Math.min(rect.width, bounds.right - left) + 'px';
-            win.style.height = Math.min(rect.height, bounds.bottom - top) + 'px';
-
-            resizeStart = {
-                pointerId: event.pointerId,
-                x: event.clientX,
-                y: event.clientY,
-                width: win.getBoundingClientRect().width,
-                height: win.getBoundingClientRect().height,
-                maxWidth: bounds.right - left,
-                maxHeight: Math.min(
-                    bounds.bottom - top,
-                    Number.isFinite(cssMaxHeight) ? cssMaxHeight : bounds.bottom - top
-                )
-            };
-            win.style.zIndex = ++windowZ;
-            resizeHandle.setPointerCapture(event.pointerId);
-        });
-
-        resizeHandle.addEventListener('pointermove', event => {
-            if (!resizeStart || event.pointerId !== resizeStart.pointerId) return;
-            const width = Math.min(
-                resizeStart.maxWidth,
-                Math.max(minFinanceWidth, resizeStart.width + event.clientX - resizeStart.x)
-            );
-            const height = Math.min(
-                resizeStart.maxHeight,
-                Math.max(minFinanceHeight, resizeStart.height + event.clientY - resizeStart.y)
-            );
-            win.style.width = width + 'px';
-            win.style.height = height + 'px';
-        });
-
-        const stopResize = event => {
-            if (resizeStart && event.pointerId === resizeStart.pointerId) {
-                resizeStart = null;
-            }
-        };
-        resizeHandle.addEventListener('pointerup', stopResize);
-        resizeHandle.addEventListener('pointercancel', stopResize);
+    if (window.innerWidth > 768) {
+        win.style.width = '620px';
+        win.style.height = '480px';
     }
+    win.style.resize = 'none';
     
     // Cache elements
     const inspectBtn = win.querySelector('#chog-inspect-btn');
