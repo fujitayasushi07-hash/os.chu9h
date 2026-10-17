@@ -6,6 +6,7 @@
     <title>GLITCHWARE Desktop</title>
 
     <link rel="stylesheet" href="https://unpkg.com/98.css" />
+    <link rel="stylesheet" href="css/chog-messenger.css" />
     <script defer src="https://unpkg.com/lightweight-charts@5.2.1/dist/lightweight-charts.standalone.production.js"></script>
 
     <style>
@@ -1752,6 +1753,11 @@
     <div>gae-arts.app</div>
 </div>
 
+        <div class="icon" data-app="chog-messenger">
+            <img src="assets/images/icon-chog-message.png">
+            <div>CHOG Messenger</div>
+        </div>
+
     </div>
 
     <div id="taskbar">
@@ -2324,6 +2330,10 @@ document.getElementById("start-settings")?.addEventListener("click", () => {
         openClipArtGallery();
     }
 
+    if (icon.dataset.app === "chog-messenger") {
+        openChogMessenger();
+    }
+
 });
 
             // Touch double-tap support for mobile
@@ -2342,6 +2352,9 @@ document.getElementById("start-settings")?.addEventListener("click", () => {
                     }
                     if (icon.dataset.app === "clipart") {
                         openClipArtGallery();
+                    }
+                    if (icon.dataset.app === "chog-messenger") {
+                        openChogMessenger();
                     }
                 }
                 lastTap = currentTime;
@@ -2470,6 +2483,11 @@ document.getElementById("start-settings")?.addEventListener("click", () => {
 
 /* ===== CHOG FINANCE ===== */
 function openChogFinance() {
+    if (openWindows["CHOG Finance"]) {
+        openWindow("CHOG Finance", "", "assets/images/documents.png");
+        return;
+    }
+
     const CHOG_CONTRACT = '0x350035555e10d9afaf1566aaebfced5ba6c27777';
     
     const html = `
@@ -6018,6 +6036,7 @@ hiddenGemVideo.addEventListener("ended", () => {
     </script>
 
 <script src="js/chog-finance-phase4.js"></script>
+<script src="js/chog-messenger.js"></script>
 
 <audio id="boot-sound" src="assets/sounds/startup.wav" preload="auto"></audio>
 

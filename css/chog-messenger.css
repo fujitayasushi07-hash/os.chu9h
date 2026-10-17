@@ -1,0 +1,606 @@
+/* CHOG Messenger - all selectors are prefixed with chogmsg- */
+.chogmsg-root {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    font-family: Tahoma, "MS Sans Serif", sans-serif;
+    font-size: 11px;
+    color: #000;
+}
+
+.chogmsg-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    color: #fff;
+    background: linear-gradient(180deg, #5b9bf0 0%, #2a64c8 55%, #1d4fa8 100%);
+    border-bottom: 1px solid #12347a;
+    border-radius: 4px 4px 0 0;
+}
+
+.chogmsg-header img {
+    width: 28px;
+    height: 28px;
+    image-rendering: pixelated;
+}
+
+.chogmsg-header-title {
+    font-weight: bold;
+    font-size: 13px;
+    text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.35);
+}
+
+.chogmsg-header-sub {
+    font-size: 10px;
+    opacity: 0.9;
+}
+
+.chogmsg-header-user {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.chogmsg-panel {
+    margin: 8px;
+    padding: 12px;
+    background: #ece9d8;
+    border: 1px solid #808080;
+    border-radius: 4px;
+    box-shadow: inset 1px 1px 0 #fff;
+}
+
+/* ===== SETUP ===== */
+.chogmsg-setup {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.chogmsg-setup h3 {
+    margin: 0 0 10px;
+    font-size: 13px;
+    color: #1d4fa8;
+}
+
+.chogmsg-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-bottom: 12px;
+}
+
+.chogmsg-field input[type="text"] {
+    height: 24px;
+    width: 100%;
+    padding: 2px 6px;
+    box-sizing: border-box;
+}
+
+.chogmsg-avatar-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.chogmsg-avatar-option {
+    padding: 2px;
+    background: transparent;
+    border: 2px solid transparent;
+    border-radius: 0;
+    cursor: pointer;
+    min-width: 0;
+    min-height: 0;
+    box-shadow: none;
+}
+
+.chogmsg-avatar-option:hover {
+    background: #f3f0e2;
+    border-color: #c8c4ae;
+}
+
+/* Classic sunken selection with a dotted focus ring. */
+.chogmsg-avatar-option.chogmsg-selected {
+    background: #d4d0c8;
+    border-color: #808080 #fff #fff #808080;
+    outline: 1px dotted #000;
+    outline-offset: -4px;
+}
+
+.chogmsg-avatar-option:focus-visible {
+    outline: 1px dotted #000;
+    outline-offset: 1px;
+}
+
+.chogmsg-avatar-option.chogmsg-selected:focus-visible {
+    outline-offset: -4px;
+}
+
+.chogmsg-avatar {
+    width: 36px;
+    height: 36px;
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    border: 1px solid #5a5a5a;
+    border-radius: 4px;
+    color: #fff;
+    font-size: 18px;
+    line-height: 1;
+    background-size: cover;
+    background-position: center;
+    overflow: hidden;
+}
+
+.chogmsg-avatar-sm {
+    width: 22px;
+    height: 22px;
+    font-size: 12px;
+}
+
+.chogmsg-av-0 { background-color: #6a3fc9; }
+.chogmsg-av-1 { background-color: #d53f7c; }
+.chogmsg-av-2 { background-color: #1f9d6b; }
+.chogmsg-av-3 { background-color: #e08a1e; }
+.chogmsg-av-4 { background-color: #2a64c8; }
+.chogmsg-av-5 { background-color: #555; }
+
+.chogmsg-upload-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 2px;
+}
+
+.chogmsg-upload-row button {
+    min-height: 23px;
+    padding: 2px 12px;
+}
+
+.chogmsg-upload-row > span { margin-left: auto; }
+
+.chogmsg-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+    margin-top: 6px;
+    padding-top: 10px;
+    border-top: 1px solid #b8b49c;
+}
+
+.chogmsg-actions button {
+    min-width: 75px;
+    height: 23px;
+    padding: 0 14px;
+    font-family: Tahoma, "MS Sans Serif", sans-serif;
+    font-size: 11px;
+    color: #000;
+    background: #c0c0c0;
+    border: none;
+    border-radius: 0;
+    box-shadow: inset -1px -1px #0a0a0a, inset 1px 1px #fff,
+                inset -2px -2px #808080, inset 2px 2px #dfdfdf;
+    cursor: pointer;
+}
+
+.chogmsg-actions button:active {
+    padding: 2px 14px 0 16px;
+    box-shadow: inset -1px -1px #fff, inset 1px 1px #0a0a0a,
+                inset -2px -2px #dfdfdf, inset 2px 2px #808080;
+}
+
+.chogmsg-actions button:focus-visible {
+    outline: 1px dotted #000;
+    outline-offset: -4px;
+}
+
+.chogmsg-upload-row input[type="file"] {
+    display: none;
+}
+
+.chogmsg-note {
+    font-size: 10px;
+    color: #444;
+    margin-top: 4px;
+}
+
+.chogmsg-error {
+    min-height: 14px;
+    margin: 0 0 6px;
+    color: #b00020;
+    font-weight: bold;
+}
+
+/* ===== CHAT ===== */
+.chogmsg-chat {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+.chogmsg-history {
+    flex: 1;
+    min-height: 160px;
+    margin: 8px 8px 0;
+    padding: 8px 10px;
+    overflow-y: auto;
+    background: #fff;
+    border: 2px inset #c0c0c0;
+    border-radius: 3px;
+}
+
+/* ===== WELCOME BOOT INTRO ===== */
+.chogmsg-intro {
+    position: absolute;
+    z-index: 3;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 8px;
+    background: #fff;
+    border: 2px inset #c0c0c0;
+    border-radius: 3px;
+    text-align: center;
+    pointer-events: none;
+    animation: chogmsg-intro-in 260ms steps(5, end) both;
+}
+
+.chogmsg-intro img {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: min(240px, 75%);
+    max-height: 170px;
+    margin-bottom: 8px;
+    object-fit: contain;
+}
+
+.chogmsg-intro-title {
+    font-family: "PxPlus_IBM_VGA8", "MS Sans Serif", Tahoma, sans-serif;
+    font-size: 15px;
+    line-height: 1.3;
+    color: #000;
+}
+
+.chogmsg-intro-out {
+    animation: chogmsg-intro-out 500ms ease-in forwards;
+}
+
+.chogmsg-intro-static,
+.chogmsg-intro-static.chogmsg-intro-out {
+    animation: none;
+}
+
+.chogmsg-intro-static.chogmsg-intro-out {
+    opacity: 0;
+}
+
+@keyframes chogmsg-intro-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes chogmsg-intro-out {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(6px); }
+}
+
+.chogmsg-message {
+    flex: 0 0 auto;
+    display: flex;
+    gap: 8px;
+    padding: 7px 0;
+    border-bottom: 1px solid #e6e6e6;
+}
+
+.chogmsg-message:last-child {
+    border-bottom: none;
+}
+
+.chogmsg-message-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.chogmsg-message-meta {
+    display: flex;
+    gap: 6px;
+    align-items: baseline;
+}
+
+.chogmsg-username {
+    font-weight: bold;
+    color: #1d4fa8;
+}
+
+.chogmsg-time {
+    font-size: 10px;
+    color: #777;
+}
+
+.chogmsg-text {
+    margin-top: 2px;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.chogmsg-system {
+    margin: 4px 0 8px;
+    text-align: center;
+    font-size: 10px;
+    color: #666;
+}
+
+.chogmsg-compose {
+    display: flex;
+    gap: 6px;
+    align-items: stretch;
+    margin: 8px;
+}
+
+.chogmsg-compose textarea {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 40px;
+    min-height: 40px;
+    max-height: 96px;
+    resize: none;
+    overflow-y: auto;
+    box-sizing: border-box;
+    padding: 4px 6px;
+    font-family: inherit;
+    font-size: 11px;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+.chogmsg-compose button {
+    flex: 0 0 auto;
+    align-self: flex-end;
+    min-width: 64px;
+    height: 40px;
+}
+
+.chogmsg-status {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 0 10px 8px;
+    font-size: 10px;
+    color: #444;
+}
+
+.chogmsg-status span:last-child {
+    flex: 0 0 auto;
+}
+
+@media (max-width: 480px) {
+    .chogmsg-panel { margin: 6px; padding: 8px; }
+    .chogmsg-header { padding: 5px 8px; }
+    .chogmsg-header-sub { display: none; }
+    .chogmsg-compose button { min-width: 52px; }
+    .chogmsg-actions button { width: 100%; }
+}
+
+.chogmsg-online {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    white-space: nowrap;
+}
+
+.chogmsg-online-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #2ecc40;
+    border: 1px solid #0b6b1a;
+    box-shadow: 0 0 3px rgba(46, 204, 64, 0.8);
+}
+
+.chogmsg-link {
+    background: none;
+    border: none;
+    box-shadow: none;
+    min-width: 0;
+    min-height: 0;
+    padding: 0;
+    color: #fff;
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: 10px;
+}
+
+/* ===== USERNAME SPEECH BUBBLE ===== */
+.chogmsg-bubble {
+    position: absolute;
+    z-index: 5;
+    width: min(290px, calc(100% - 36px));
+    box-sizing: border-box;
+    padding: 8px 10px;
+    background: #fffbe6;
+    border: 1px solid #404040;
+    border-radius: 0;
+    box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.45);
+    color: #000;
+    line-height: 1.4;
+    animation: chogmsg-bubble-in 220ms ease-out both;
+}
+
+.chogmsg-bubble-left { left: 18px; }
+.chogmsg-bubble-right { right: 18px; }
+
+/* Angular pointer: ::before is the dark outline, ::after the cream fill. */
+.chogmsg-bubble::before,
+.chogmsg-bubble::after {
+    content: "";
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-color: transparent;
+}
+
+.chogmsg-bubble-left::before {
+    top: 10px;
+    left: -8px;
+    border-width: 6px 7px 6px 0;
+    border-right-color: #404040;
+}
+
+.chogmsg-bubble-left::after {
+    top: 11px;
+    left: -6px;
+    border-width: 5px 6px 5px 0;
+    border-right-color: #fffbe6;
+}
+
+.chogmsg-bubble-right::before {
+    top: 10px;
+    right: -8px;
+    border-width: 6px 0 6px 7px;
+    border-left-color: #404040;
+}
+
+.chogmsg-bubble-right::after {
+    top: 11px;
+    right: -6px;
+    border-width: 5px 0 5px 6px;
+    border-left-color: #fffbe6;
+}
+
+.chogmsg-bubble-notail::before,
+.chogmsg-bubble-notail::after { display: none; }
+
+.chogmsg-bubble-out {
+    animation: chogmsg-bubble-out 180ms ease-in both;
+}
+
+.chogmsg-bubble-title {
+    margin-bottom: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    color: #000;
+}
+
+.chogmsg-bubble-ok {
+    display: block;
+    margin: 8px 0 0 auto;
+    min-width: 75px;
+    height: 23px;
+    padding: 0;
+    font-family: Tahoma, "MS Sans Serif", sans-serif;
+    font-size: 11px;
+    color: #000;
+    background: #c0c0c0;
+    border: none;
+    border-radius: 0;
+    box-shadow: inset -1px -1px #0a0a0a, inset 1px 1px #fff,
+                inset -2px -2px #808080, inset 2px 2px #dfdfdf;
+    cursor: pointer;
+}
+
+.chogmsg-bubble-ok:active {
+    box-shadow: inset -1px -1px #fff, inset 1px 1px #0a0a0a,
+                inset -2px -2px #dfdfdf, inset 2px 2px #808080;
+    padding: 2px 0 0 2px;
+}
+
+.chogmsg-bubble-ok:focus-visible {
+    outline: 1px dotted #000;
+    outline-offset: -4px;
+}
+
+
+@keyframes chogmsg-bubble-in {
+    from { opacity: 0; transform: translateY(-8px) scale(0.96); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes chogmsg-bubble-out {
+    from { opacity: 1; transform: translateY(0) scale(1); }
+    to { opacity: 0; transform: translateY(-8px) scale(0.96); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .chogmsg-bubble,
+    .chogmsg-bubble-out {
+        animation-duration: 1ms;
+    }
+}
+
+/* ===== EDIT PROFILE ===== */
+.chogmsg-edit {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    overflow-y: auto;
+    background: #c0c0c0;
+}
+
+/* While editing, the chat is hidden and the form sizes the window. */
+.chogmsg-editing .chogmsg-chat { display: none; }
+
+.chogmsg-editing .chogmsg-edit {
+    position: static;
+    overflow: visible;
+    background: transparent;
+}
+
+.chogmsg-edit .chogmsg-panel { margin: 6px 8px 8px; padding: 10px; }
+.chogmsg-edit .chogmsg-setup h3 { margin-bottom: 8px; }
+.chogmsg-edit .chogmsg-field { margin-bottom: 8px; }
+.chogmsg-edit .chogmsg-actions { margin-top: 4px; padding-top: 8px; }
+.chogmsg-edit .chogmsg-error { min-height: 0; margin: 0; }
+.chogmsg-edit .chogmsg-error:not(:empty) { margin-bottom: 6px; }
+
+.chogmsg-profile-btn {
+    all: unset;
+    box-sizing: border-box;
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    color: #fff;
+    font: inherit;
+    font-size: 11px;
+}
+
+.chogmsg-profile-btn:hover {
+    background: rgba(255, 255, 255, 0.18);
+}
+
+.chogmsg-profile-btn:focus-visible {
+    outline: 1px dotted #fff;
+}
+
+.chogmsg-profile-avatar {
+    display: flex;
+}
+
+/* ===== PEEKING CHOG (rendered on document.body, behind the Messenger window) ===== */
+.chogmsg-peek {
+    position: fixed;
+    pointer-events: none;
+}
+
+.chogmsg-peek-right {
+    transform: scaleX(-1);
+}
