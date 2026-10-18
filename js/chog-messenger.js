@@ -377,6 +377,8 @@
         }
 
         function appendMessage(text, sentAt, id) {
+            // A poll may already have rendered this message before the POST response arrived.
+            if (id && seenIds.has(id)) return;
             if (id) seenIds.add(id);
             history.append(buildRow(profile.name, text, sentAt));
             history.scrollTop = history.scrollHeight;
@@ -423,6 +425,107 @@
             history.prepend(fragment);
             if (!history.children.length) showHistoryState("No messages yet. Say hello to start the conversation!", false);
             history.scrollTop = history.scrollHeight;
+            startPolling();
+        }
+
+        // Live updates: re-fetch the latest messages every few seconds and append unseen ones.
+        const POLL_MS = 3000;
+        const POLL_TIMEOUT_MS = 8000;
+        const POLL_WARN_AFTER = 3;
+        const RECONNECT_NOTE = "Reconnecting to chat...";
+        let pollTimer = null;
+        let pollController = null;
+        let pollFailures = 0;
+        let pollObserver = null;
+
+        function stopPolling() {
+            clearInterval(pollTimer);
+            pollTimer = null;
+            if (pollController) pollController.abort();
+            pollController = null;
+            if (pollObserver) pollObserver.disconnect();
+            pollObserver = null;
+            document.removeEventListener("visibilitychange", pollNow);
+        }
+
+        function pollSuccess() {
+            pollFailures = 0;
+            if (note.textContent === RECONNECT_NOTE) note.textContent = IDLE_NOTE;
+        }
+
+        function pollFailure() {
+            pollFailures++;
+            // Never overwrite a send error or the sending indicator.
+            if (pollFailures >= POLL_WARN_AFTER && note.textContent === IDLE_NOTE) note.textContent = RECONNECT_NOTE;
+        }
+
+        async function pollNow() {
+            if (!chat.isConnected) return stopPolling();
+            const win = root.closest(".window");
+            if (document.hidden || (win && win.style.display === "none")) return;
+            if (pollController) return;
+
+            const controller = new AbortController();
+            pollController = controller;
+            const timeout = setTimeout(() => controller.abort(), POLL_TIMEOUT_MS);
+            let messages = null;
+            try {
+                const res = await fetch("/api/messenger/messages", {
+                    headers: { "Accept": "application/json" },
+                    cache: "no-store",
+                    signal: controller.signal
+                });
+                const data = await res.json();
+                if (res.ok && data && data.success === true && Array.isArray(data.messages)) messages = data.messages;
+            } catch { /* counted as a failure below */ }
+            clearTimeout(timeout);
+            if (pollController === controller) pollController = null;
+            if (!chat.isConnected) return stopPolling();
+
+            if (!messages) return pollFailure();
+            pollSuccess();
+
+            const fresh = [];
+            for (const m of messages) {
+                if (!m || typeof m.display_name !== "string" || typeof m.body !== "string") continue;
+                if (!m.id || seenIds.has(m.id)) continue;
+                const when = new Date(m.created_at);
+                fresh.push({ m, when: isNaN(when) ? new Date() : when });
+            }
+            if (!fresh.length) return;
+            fresh.sort((a, b) => a.when - b.when);
+
+            const nearBottom = history.scrollHeight - history.scrollTop - history.clientHeight <= 40;
+            const fragment = document.createDocumentFragment();
+            for (const { m, when } of fresh) {
+                seenIds.add(m.id);
+                fragment.append(buildRow(m.display_name, m.body, when));
+            }
+            history.querySelectorAll(".chogmsg-history-state").forEach(n => n.remove());
+            history.append(fragment);
+            if (nearBottom) history.scrollTop = history.scrollHeight;
+        }
+
+        function startPolling() {
+            if (pollTimer || !chat.isConnected) return;
+            // Drop any leftover listener/observer so a restart can never register a second one.
+            document.removeEventListener("visibilitychange", pollNow);
+            if (pollObserver) pollObserver.disconnect();
+            pollObserver = null;
+            pollTimer = setInterval(pollNow, POLL_MS);
+            // Catch up promptly when the tab becomes visible or the window is restored.
+            document.addEventListener("visibilitychange", pollNow);
+            const win = root.closest(".window");
+            if (win) {
+                // Dragging also mutates style, so only react when the window is restored.
+                let wasHidden = win.style.display === "none";
+                pollObserver = new MutationObserver(() => {
+                    const hidden = win.style.display === "none";
+                    if (wasHidden && !hidden) pollNow();
+                    wasHidden = hidden;
+                });
+                pollObserver.observe(win, { attributes: true, attributeFilter: ["style"] });
+            }
         }
 
         function failureMessage(res, data) {
