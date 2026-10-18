@@ -41,6 +41,26 @@ async function readJsonBody(req) {
         chunks.push(buffer);
     }
 
+    // `vercel dev` ignores bodyParser:false: it consumes the stream and exposes the
+    // result as req.body. Production leaves req.body undefined, so this only applies locally.
+    if (size === 0 && req.body !== undefined && req.body !== null) {
+        if (Buffer.isBuffer(req.body)) {
+            chunks.push(req.body);
+            size = req.body.length;
+            if (size > MAX_BODY_BYTES) {
+                throw new RequestError(413, 'Request body is too large');
+            }
+        } else if (typeof req.body === 'string') {
+            const buffer = Buffer.from(req.body, 'utf8');
+            if (buffer.length > MAX_BODY_BYTES) {
+                throw new RequestError(413, 'Request body is too large');
+            }
+            chunks.push(buffer);
+        } else if (typeof req.body === 'object') {
+            return req.body;
+        }
+    }
+
     let text;
     try {
         text = new TextDecoder('utf-8', { fatal: true }).decode(Buffer.concat(chunks));
@@ -131,13 +151,88 @@ function getConfiguration() {
     };
 }
 
+const HISTORY_LIMIT = 100;
+
+async function handleHistory(req, res) {
+    const configuration = getConfiguration();
+    if (!configuration) {
+        return sendJson(res, 503, {
+            success: false,
+            error: 'Message service is not configured'
+        });
+    }
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    try {
+        let response;
+        try {
+            response = await fetch(
+                `${configuration.projectUrl}/rest/v1/messages` +
+                    `?select=id,created_at,display_name,body&order=created_at.desc&limit=${HISTORY_LIMIT}`,
+                {
+                    headers: {
+                        apikey: configuration.secretKey,
+                        Accept: 'application/json'
+                    },
+                    signal: controller.signal
+                }
+            );
+        } catch {
+            return sendJson(res, controller.signal.aborted ? 504 : 502, {
+                success: false,
+                error: controller.signal.aborted
+                    ? 'Message service timed out'
+                    : 'Unable to reach message service'
+            });
+        }
+        if (!response.ok) {
+            return sendJson(res, 503, {
+                success: false,
+                error: 'Message service is unavailable'
+            });
+        }
+
+        let rows;
+        try {
+            rows = await response.json();
+        } catch {
+            return sendJson(res, 502, {
+                success: false,
+                error: 'Message service returned an invalid response'
+            });
+        }
+        if (!Array.isArray(rows)) {
+            return sendJson(res, 502, {
+                success: false,
+                error: 'Message service returned an invalid response'
+            });
+        }
+
+        // Newest rows are fetched so the limit keeps recent history; return oldest first.
+        const messages = rows.reverse().map(row => ({
+            id: row.id,
+            created_at: row.created_at,
+            display_name: row.display_name,
+            body: row.body
+        }));
+        return sendJson(res, 200, { success: true, messages });
+    } finally {
+        clearTimeout(timeout);
+    }
+}
+
 module.exports = async (req, res) => {
+    if (req.method === 'GET') {
+        return handleHistory(req, res);
+    }
+
     if (req.method !== 'POST') {
         return sendJson(
             res,
             405,
             { success: false, error: 'Method not allowed' },
-            { Allow: 'POST' }
+            { Allow: 'GET, POST' }
         );
     }
 

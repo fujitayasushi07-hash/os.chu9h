@@ -227,6 +227,12 @@
     min-height: 0;
 }
 
+.chogmsg-history-state {
+    padding: 12px 0;
+    text-align: center;
+    color: #444;
+}
+
 .chogmsg-history {
     flex: 1;
     min-height: 160px;
@@ -552,21 +558,16 @@
     background: #c0c0c0;
 }
 
-/* While editing, the chat is hidden and the form sizes the window. */
-.chogmsg-editing .chogmsg-chat { display: none; }
+/* While editing, the chat and its header are hidden (kept in the DOM) and the
+   setup form, identical to first-time setup, sizes the window. */
+.chogmsg-editing > .chogmsg-header,
+.chogmsg-editing > .chogmsg-chat { display: none; }
 
 .chogmsg-editing .chogmsg-edit {
     position: static;
     overflow: visible;
     background: transparent;
 }
-
-.chogmsg-edit .chogmsg-panel { margin: 6px 8px 8px; padding: 10px; }
-.chogmsg-edit .chogmsg-setup h3 { margin-bottom: 8px; }
-.chogmsg-edit .chogmsg-field { margin-bottom: 8px; }
-.chogmsg-edit .chogmsg-actions { margin-top: 4px; padding-top: 8px; }
-.chogmsg-edit .chogmsg-error { min-height: 0; margin: 0; }
-.chogmsg-edit .chogmsg-error:not(:empty) { margin-bottom: 6px; }
 
 .chogmsg-profile-btn {
     all: unset;

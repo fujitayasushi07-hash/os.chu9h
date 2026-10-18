@@ -275,16 +275,19 @@
         root.classList.add("chogmsg-editing");
         sizeWindow(root, 400, 0);
         const close = () => {
+            // Removing the overlay disconnects the input, which also makes the peeking CHOG retreat.
             overlay.remove();
+            root.querySelectorAll(".chogmsg-bubble").forEach(b => b.remove());
             root.classList.remove("chogmsg-editing");
             sizeWindow(root, 640, 540);
             if (history) history.scrollTop = scrollTop;
         };
         const form = buildProfileForm({
-            title: "Edit Profile",
+            title: "Set up your profile",
             submitLabel: "Save",
             initial: profile,
             onCancel: close,
+            onFirstNameFocus: input => showUsernameWarning(root, input),
             onSubmit: draft => {
                 const failure = commitProfile(draft);
                 if (failure) return failure;
@@ -293,7 +296,7 @@
                 return null;
             }
         });
-        overlay.append(form.panel);
+        overlay.append(buildHeader("Choose a username to join Global Chat"), form.panel);
         root.append(overlay);
         form.nameInput.focus();
     }
@@ -331,7 +334,9 @@
         compose.append(input, send);
 
         const status = el("div", "chogmsg-status");
-        const note = el("span", null, "Preview only - messages are not sent anywhere yet.");
+        const IDLE_NOTE = "Messages you send are posted to Global Chat.";
+        const note = el("span", null, IDLE_NOTE);
+        note.setAttribute("role", "status");
         const counter = el("span", null, "0/" + MAX_MESSAGE);
         status.append(note, counter);
 
@@ -351,23 +356,138 @@
             }
         });
 
-        compose.addEventListener("submit", e => {
-            e.preventDefault();
-            const text = input.value.trim();
-            if (!text || Array.from(text).length > MAX_MESSAGE) return;
+        const seenIds = new Set();
 
+        function avatarFor(name) {
+            if (name === profile.name) return makeAvatar(profile, false);
+            // The API stores no avatar, so other users get a stable default derived from their name.
+            let hash = 0;
+            for (const ch of name) hash = (hash + ch.codePointAt(0)) % AVATAR_IMAGES.length;
+            return makeAvatar({ avatarIndex: hash, avatarUrl: null }, false);
+        }
+
+        function buildRow(name, text, when) {
             const row = el("div", "chogmsg-message");
             const main = el("div", "chogmsg-message-main");
             const meta = el("div", "chogmsg-message-meta");
-            meta.append(el("span", "chogmsg-username", profile.name), el("span", "chogmsg-time", formatTime(new Date())));
+            meta.append(el("span", "chogmsg-username", name), el("span", "chogmsg-time", formatTime(when)));
             main.append(meta, el("div", "chogmsg-text", text));
-            row.append(makeAvatar(profile, false), main);
-            history.append(row);
-            history.scrollTop = history.scrollHeight;
+            row.append(avatarFor(name), main);
+            return row;
+        }
 
-            input.value = "";
-            counter.textContent = "0/" + MAX_MESSAGE;
-            growInput();
+        function appendMessage(text, sentAt, id) {
+            if (id) seenIds.add(id);
+            history.append(buildRow(profile.name, text, sentAt));
+            history.scrollTop = history.scrollHeight;
+        }
+
+        function showHistoryState(text, isError) {
+            const state = el("div", "chogmsg-history-state", text);
+            if (isError) {
+                state.style.color = "#b00020";
+                const retry = el("button", null, "Retry");
+                retry.type = "button";
+                retry.addEventListener("click", loadHistory);
+                state.append(document.createElement("br"), retry);
+            }
+            history.prepend(state);
+        }
+
+        // Fetches existing messages. Rows sent while loading stay at the bottom; anything
+        // the server already returned for them is skipped by id.
+        async function loadHistory() {
+            history.querySelectorAll(".chogmsg-history-state").forEach(n => n.remove());
+            showHistoryState("Loading messages...", false);
+            let messages = null;
+            try {
+                const res = await fetch("/api/messenger/messages", { headers: { "Accept": "application/json" } });
+                const data = await res.json();
+                if (res.ok && data && data.success === true && Array.isArray(data.messages)) messages = data.messages;
+            } catch { /* handled below */ }
+            if (!root.isConnected) return;
+
+            history.querySelectorAll(".chogmsg-history-state").forEach(n => n.remove());
+            if (!messages) {
+                showHistoryState("Could not load earlier messages. Check your connection and try again.", true);
+                return;
+            }
+            const fragment = document.createDocumentFragment();
+            for (const m of messages) {
+                if (!m || typeof m.display_name !== "string" || typeof m.body !== "string") continue;
+                if (m.id && seenIds.has(m.id)) continue;
+                if (m.id) seenIds.add(m.id);
+                const when = new Date(m.created_at);
+                fragment.append(buildRow(m.display_name, m.body, isNaN(when) ? new Date() : when));
+            }
+            history.prepend(fragment);
+            if (!history.children.length) showHistoryState("No messages yet. Say hello to start the conversation!", false);
+            history.scrollTop = history.scrollHeight;
+        }
+
+        function failureMessage(res, data) {
+            if (res.status === 429) {
+                const wait = parseInt(res.headers.get("Retry-After"), 10);
+                return "You're sending messages too fast. Please wait" +
+                    (wait > 0 ? " " + wait + " second" + (wait === 1 ? "" : "s") : " a moment") + " and try again.";
+            }
+            if (res.status === 400 && data && typeof data.error === "string") return data.error + ".";
+            if (res.status >= 500) return "Chat is temporarily unavailable. Your message was not sent - please try again.";
+            return "Your message could not be sent. Please try again.";
+        }
+
+        let sending = false;
+        compose.addEventListener("submit", async e => {
+            e.preventDefault();
+            if (sending) return;
+            const text = input.value.trim();
+            if (!text || Array.from(text).length > MAX_MESSAGE) return;
+
+            sending = true;
+            send.disabled = true;
+            input.readOnly = true;
+            note.style.color = "";
+            note.textContent = "Sending...";
+
+            let ok = false;
+            let sentAt = new Date();
+            let sentId = null;
+            let errorText = "";
+            try {
+                const res = await fetch("/api/messenger/messages", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "Accept": "application/json" },
+                    body: JSON.stringify({ display_name: profile.name, body: text })
+                });
+                let data = null;
+                try { data = await res.json(); } catch { /* non-JSON error body */ }
+                if (res.ok && data && data.success === true) {
+                    ok = true;
+                    const created = data.message && new Date(data.message.created_at);
+                    if (created && !isNaN(created)) sentAt = created;
+                    if (data.message && typeof data.message.id === "string") sentId = data.message.id;
+                } else {
+                    errorText = failureMessage(res, data);
+                }
+            } catch {
+                errorText = "Could not reach the server. Check your connection - your message was not sent.";
+            }
+
+            sending = false;
+            send.disabled = false;
+            input.readOnly = false;
+            if (!root.isConnected) return;
+
+            if (ok) {
+                note.textContent = IDLE_NOTE;
+                appendMessage(text, sentAt, sentId);
+                input.value = "";
+                counter.textContent = "0/" + MAX_MESSAGE;
+                growInput();
+            } else {
+                note.textContent = errorText;
+                note.style.color = "#b00020";
+            }
             input.focus();
         });
 
@@ -375,6 +495,7 @@
         root.append(header, chat);
         input.focus();
         if (playIntro) playWelcomeIntro(root, chat, history);
+        loadHistory();
     }
 
     const INTRO_SOUND = "assets/sounds/message-boot.MP3";
@@ -671,7 +792,7 @@
             const r = win.getBoundingClientRect();
             const left = side === "left" ? r.left - visible : r.right - (size - visible);
             const top = Math.max(4, Math.min(window.innerHeight - size - 44,
-                r.top + anchorOffset - size * -0.29));
+                r.top + anchorOffset - size * -0.2548));
             canvas.style.left = left + "px";
             canvas.style.top = top + "px";
             canvas.style.zIndex = String((parseInt(win.style.zIndex, 10) || 100) - 1);
