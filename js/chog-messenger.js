@@ -367,7 +367,7 @@
         }
 
         function buildRow(name, text, when) {
-            const row = el("div", "chogmsg-message");
+            const row = el("div", "chogmsg-message" + (name === profile.name ? " chogmsg-message-mine" : ""));
             const main = el("div", "chogmsg-message-main");
             const meta = el("div", "chogmsg-message-meta");
             meta.append(el("span", "chogmsg-username", name), el("span", "chogmsg-time", formatTime(when)));
