@@ -7,6 +7,7 @@
 
     <link rel="stylesheet" href="https://unpkg.com/98.css" />
     <link rel="stylesheet" href="css/chog-messenger.css" />
+    <link rel="stylesheet" href="css/chog-pfp-maker.css" />
     <script defer src="https://unpkg.com/lightweight-charts@5.2.1/dist/lightweight-charts.standalone.production.js"></script>
 
     <style>
@@ -1758,6 +1759,11 @@
             <div>CHOG Messenger</div>
         </div>
 
+        <div class="icon" data-app="chog-pfp-maker">
+            <img src="assets/images/icon-pfp-maker.png" alt="">
+            <div>CHOGWARE PFP Maker</div>
+        </div>
+
     </div>
 
     <div id="taskbar">
@@ -1877,6 +1883,11 @@
                     <div class="start-item" id="open-chog-finance">
                         <img src="assets/images/documents.png" alt="">
                         CHOG Finance
+                    </div>
+
+                    <div class="start-item" id="open-chog-pfp-maker">
+                        <img src="assets/images/icon-pfp-maker.png" alt="">
+                        CHOGWARE PFP Maker
                     </div>
 
                     <!-- Twitter / X -->
@@ -2098,6 +2109,14 @@ document
     .getElementById("open-chog-finance")
     ?.addEventListener("click", () => {
         openChogFinance();
+        startMenu.style.display = "none";
+        startButton.classList.remove("active");
+    });
+
+document
+    .getElementById("open-chog-pfp-maker")
+    ?.addEventListener("click", () => {
+        window.openChogPfpMaker();
         startMenu.style.display = "none";
         startButton.classList.remove("active");
     });
@@ -2334,6 +2353,10 @@ document.getElementById("start-settings")?.addEventListener("click", () => {
         openChogMessenger();
     }
 
+    if (icon.dataset.app === "chog-pfp-maker") {
+        window.openChogPfpMaker();
+    }
+
 });
 
             // Touch double-tap support for mobile
@@ -2355,6 +2378,9 @@ document.getElementById("start-settings")?.addEventListener("click", () => {
                     }
                     if (icon.dataset.app === "chog-messenger") {
                         openChogMessenger();
+                    }
+                    if (icon.dataset.app === "chog-pfp-maker") {
+                        window.openChogPfpMaker();
                     }
                 }
                 lastTap = currentTime;
@@ -6037,6 +6063,7 @@ hiddenGemVideo.addEventListener("ended", () => {
 
 <script src="js/chog-finance-phase4.js"></script>
 <script src="js/chog-messenger.js"></script>
+<script src="js/chog-pfp-maker.js"></script>
 
 <audio id="boot-sound" src="assets/sounds/startup.wav" preload="auto"></audio>
 
