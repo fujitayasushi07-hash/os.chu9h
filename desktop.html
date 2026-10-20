@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://unpkg.com/98.css" />
     <link rel="stylesheet" href="css/chog-messenger.css" />
     <link rel="stylesheet" href="css/chog-pfp-maker.css" />
+    <link rel="stylesheet" href="css/chog-incident-report.css" />
     <script defer src="https://unpkg.com/lightweight-charts@5.2.1/dist/lightweight-charts.standalone.production.js"></script>
 
     <style>
@@ -1764,6 +1765,11 @@
             <div>CHOGWARE PFP Maker</div>
         </div>
 
+        <div class="icon" data-app="chog-incident-report">
+            <img src="assets/images/doctor_watson.ico" alt="">
+            <div>614_LOST.exe</div>
+        </div>
+
     </div>
 
     <div id="taskbar">
@@ -2357,6 +2363,10 @@ document.getElementById("start-settings")?.addEventListener("click", () => {
         window.openChogPfpMaker();
     }
 
+    if (icon.dataset.app === "chog-incident-report") {
+        window.openChogIncidentReport();
+    }
+
 });
 
             // Touch double-tap support for mobile
@@ -2381,6 +2391,9 @@ document.getElementById("start-settings")?.addEventListener("click", () => {
                     }
                     if (icon.dataset.app === "chog-pfp-maker") {
                         window.openChogPfpMaker();
+                    }
+                    if (icon.dataset.app === "chog-incident-report") {
+                        window.openChogIncidentReport();
                     }
                 }
                 lastTap = currentTime;
@@ -6064,6 +6077,7 @@ hiddenGemVideo.addEventListener("ended", () => {
 <script src="js/chog-finance-phase4.js"></script>
 <script src="js/chog-messenger.js"></script>
 <script src="js/chog-pfp-maker.js"></script>
+<script src="js/chog-incident-report.js"></script>
 
 <audio id="boot-sound" src="assets/sounds/startup.wav" preload="auto"></audio>
 
