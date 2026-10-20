@@ -8,7 +8,8 @@
         { id: "summary", label: "CASE SUMMARY", status: "CASE FILE OPEN" },
         { id: "evidence", label: "ON-CHAIN EVIDENCE", status: "CHAIN DATA NOT VERIFIED HERE" },
         { id: "scene", label: "THE CRIME SCENE", status: "CLIPBOARD SUSPECT IDENTIFIED" },
-        { id: "recovery", label: "RECOVERY ATTEMPT", status: "RECOVERY STATUS UNRESOLVED" }
+        { id: "recovery", label: "RECOVERY ATTEMPT", status: "RECOVERY STATUS UNRESOLVED" },
+        { id: "archive", label: "SUPPORT TICKET ARCHIVE", status: "ARCHIVE MOUNTED READ-ONLY" }
     ];
 
     const CHOG_ADDRESS = "0x350035555E10d9AfAF1566AaebfCeD5BA6C27777";
@@ -22,6 +23,51 @@
         { title: "THE CONTRACT PAGE" },
         { title: "THE VERDICT" }
     ];
+
+    // Only screenshots that exist in the project are listed. To archive more, save the file under assets/images/ and add it to `images`.
+    const ARCHIVE = [
+        {
+            id: "team",
+            name: "CHOG_TEAM.log",
+            note: "CHOG team Discord screenshots",
+            images: [1, 2, 3, 4, 5, 6, 7, 8, 16, 9, 10, 11, 12, 13, 14, 15].map((number, index) => ({
+                src: `assets/images/chogteamchat/CHOGCHAT${number}.png`,
+                label: `CHOG TEAM · CONVERSATION ${index + 1} OF 16`,
+                alt: `CHOG team conversation screenshot ${index + 1} of 16`
+            })).concat({
+                videoSrc: "assets/videos/chogsion%20failed!.mp4",
+                label: "CHOGSION FAILED",
+                alt: "CHOGSION FAILED animation"
+            })
+        },
+        { id: "nadfun", name: "NADFUN_SUPPORT.log", note: "Nad.fun support screenshots", images: [] },
+        { id: "relay", name: "RELAY_SUPPORT.log", note: "Relay support screenshots", images: [] },
+        {
+            id: "original",
+            name: "ORIGINAL_EVIDENCE",
+            note: "Original transaction and token screenshots",
+            images: [
+                { src: RELAY_IMAGE, label: "relay-receipt.png", alt: "Screenshot of the Relay transaction details page showing a successful Solana to Monad USDC bridge" },
+                { src: MONAD_IMAGE, label: "monadvision.png", alt: "Screenshot of a MonadVision page titled Contract (Chog) showing a token portfolio" }
+            ]
+        }
+    ];
+
+    function archiveListMarkup() {
+        const rows = ARCHIVE.map(entry => `
+            <button type="button" class="chog-incident-archive-entry" data-archive-open="${entry.id}">
+                <span class="chog-incident-archive-icon" aria-hidden="true"></span>
+                <span class="chog-incident-archive-name">${entry.name}</span>
+                <span class="chog-incident-archive-note">${entry.note}</span>
+                <span class="chog-incident-archive-count">${entry.images.length ? `${entry.images.length} file${entry.images.length === 1 ? "" : "s"}` : "empty"}</span>
+            </button>
+        `).join("");
+        return `
+            <h2>SUPPORT TICKET ARCHIVE</h2>
+            <p class="chog-incident-muted">Select an entry to open it. Entries only contain screenshots that have actually been saved to this archive.</p>
+            <div class="chog-incident-archive-list" role="list">${rows}</div>
+        `;
+    }
 
     function evidenceFrame(key, src, alt, caption) {
         return `
@@ -171,6 +217,26 @@
                         <p>This summary does not quote private conversations or imply a response or recovery outcome. The case is still marked unresolved.</p>
                         <div class="chog-incident-callout">Status: waiting on humans. The blockchain does not have a help-desk extension.</div>
                     </section>
+
+                    <section class="chog-incident-panel" id="incident-panel-archive" role="tabpanel" aria-labelledby="incident-tab-archive" data-incident-panel="archive" hidden>
+                        <div class="chog-incident-archive-toolbar">
+                            <span class="chog-incident-archive-path" data-archive-path>A:\\ARCHIVE</span>
+                        </div>
+                        <div class="chog-incident-archive-list-view" data-archive-list>${archiveListMarkup()}</div>
+                        <div class="chog-incident-archive-viewer" data-archive-viewer hidden>
+                            <div class="chog-incident-archive-stage">
+                                <img alt="" data-archive-image>
+                                <video class="chog-incident-archive-video" data-archive-video autoplay playsinline muted preload="metadata" hidden aria-label="CHOGSION FAILED animation"></video>
+                                <p class="chog-incident-archive-empty" data-archive-empty hidden></p>
+                            </div>
+                            <div class="chog-incident-archive-caption" data-archive-caption aria-live="polite"></div>
+                            <div class="chog-incident-scene-nav">
+                                <button type="button" data-archive-back>&lt; BACK</button>
+                                <button type="button" data-archive-prev>&lt; PREVIOUS</button>
+                                <button type="button" data-archive-next>NEXT &gt;</button>
+                            </div>
+                        </div>
+                    </section>
                 </div>
 
                 <footer class="chog-incident-footer">
@@ -229,7 +295,6 @@
             // openWindow() leaves mobile height as auto; a definite height lets the content regions scroll instead of overflowing.
             win.style.height = "min(640px, calc(100vh - 70px))";
         }
-
         const root = win.querySelector(".chog-incident");
         const status = root.querySelector("[data-incident-status]");
         const tabs = Array.from(root.querySelectorAll("[data-incident-tab]"));
@@ -244,6 +309,7 @@
                 panel.hidden = panel.dataset.incidentPanel !== tab.dataset.incidentTab;
             });
             const section = SECTIONS.find(item => item.id === tab.dataset.incidentTab);
+            syncArchiveLayout();
             status.textContent = `DIAGNOSTIC STATUS: ${section.status}`;
             if (moveFocus) tab.focus();
         };
@@ -344,6 +410,184 @@
             showLayer(viewer, viewer.querySelector("[data-viewer-close]"), zoom);
         });
         renderScene();
+
+        // Non-team archive UI sounds are enabled by default and may be blocked by browser audio policy.
+        let audioContext = null;
+        const beep = (frequency, duration) => {
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContextClass) return;
+            audioContext = audioContext || new AudioContextClass();
+            if (audioContext.state === "suspended") audioContext.resume();
+            const oscillator = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            oscillator.type = "square";
+            oscillator.frequency.value = frequency;
+            gain.gain.setValueAtTime(0.04, audioContext.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + duration);
+            oscillator.connect(gain);
+            gain.connect(audioContext.destination);
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + duration);
+        };
+        const archiveList = root.querySelector("[data-archive-list]");
+        const archiveViewer = root.querySelector("[data-archive-viewer]");
+        const archivePath = root.querySelector("[data-archive-path]");
+        const archiveImage = root.querySelector("[data-archive-image]");
+        const archiveVideo = root.querySelector("[data-archive-video]");
+        const archiveEmpty = root.querySelector("[data-archive-empty]");
+        const archiveCaption = root.querySelector("[data-archive-caption]");
+        const archivePrev = root.querySelector("[data-archive-prev]");
+        const archiveNext = root.querySelector("[data-archive-next]");
+        const archiveStage = root.querySelector(".chog-incident-archive-stage");
+        const archiveState = { entry: null, index: 0 };
+        const archiveSound = new Audio();
+        archiveSound.preload = "auto";
+        let archiveSwapTimer = 0;
+        let archiveDisplayVersion = 0;
+
+        const stopArchiveSound = () => {
+            archiveSound.pause();
+            archiveSound.currentTime = 0;
+        };
+        const playArchiveSound = item => {
+            if (archiveState.entry?.id !== "team") return;
+            const soundSrc = item.videoSrc
+                ? "assets/sounds/chogsion%20failed-%20Sound%20Effect%20(HD).mp3"
+                : "assets/sounds/Discord%20Ping%20Sound%20Effect.mp3";
+            stopArchiveSound();
+            if (archiveSound.src !== new URL(soundSrc, document.baseURI).href) archiveSound.src = soundSrc;
+            const playback = archiveSound.play();
+            if (playback) {
+                playback.catch(error => {
+                    if (error.name !== "AbortError") console.warn("Could not play the CHOG team archive sound.", error);
+                });
+            }
+        };
+
+        // While a screenshot is open, the case header collapses so the black viewing area can use the space.
+        function syncArchiveLayout() {
+            const archiveTabSelected = root.querySelector("#incident-tab-archive").getAttribute("aria-selected") === "true";
+            root.classList.toggle("is-team-archive-viewing", archiveTabSelected && !archiveViewer.hidden && archiveState.entry?.id === "team");
+        }
+
+        const renderArchiveImage = () => {
+            const { entry, index } = archiveState;
+            const count = entry.images.length;
+            const displayVersion = ++archiveDisplayVersion;
+            archivePrev.disabled = index <= 0;
+            archiveNext.disabled = index >= count - 1;
+            archivePrev.hidden = archiveNext.hidden = count < 2;
+            archiveStage.classList.toggle("is-team-archive-stage", entry.id === "team");
+            if (!count) {
+                archiveImage.onload = null;
+                archiveVideo.pause();
+                archiveVideo.hidden = true;
+                archiveImage.hidden = true;
+                archiveEmpty.hidden = false;
+                archiveEmpty.textContent = `${entry.name} is empty. No screenshots have been archived for this entry yet, and nothing has been invented to fill the gap.`;
+                archiveCaption.textContent = "0 files";
+                return;
+            }
+            const item = entry.images[index];
+            archiveEmpty.hidden = true;
+            archiveImage.classList.remove("is-entering");
+            archiveVideo.classList.remove("is-entering", "is-failure-entering");
+            archiveImage.onload = null;
+            archiveVideo.onloadeddata = null;
+            archiveVideo.onended = null;
+            archiveVideo.pause();
+            archiveVideo.hidden = !item.videoSrc;
+            archiveImage.hidden = !!item.videoSrc;
+            if (item.videoSrc) {
+                archiveVideo.onloadeddata = () => {
+                    if (displayVersion !== archiveDisplayVersion) return;
+                    archiveVideo.classList.remove("is-entering");
+                    void archiveVideo.offsetWidth;
+                    archiveVideo.classList.add("is-entering", "is-failure-entering");
+                    const playback = archiveVideo.play();
+                    if (playback) {
+                        playback.catch(error => {
+                            if (error.name !== "AbortError") console.warn("Could not play the CHOGSION FAILED video.", error);
+                        });
+                    }
+                };
+                archiveVideo.onended = () => {
+                    if (displayVersion !== archiveDisplayVersion) return;
+                    archiveVideo.pause();
+                    archiveVideo.currentTime = Math.max(0, archiveVideo.duration - 1 / 30);
+                };
+                archiveVideo.src = item.videoSrc;
+                archiveVideo.load();
+            } else {
+                archiveImage.onload = () => {
+                    if (displayVersion !== archiveDisplayVersion || entry.id !== "team") return;
+                    archiveImage.classList.remove("is-entering", "is-failure-entering");
+                    void archiveImage.offsetWidth;
+                    archiveImage.classList.add("is-entering");
+                    playArchiveSound(item);
+                };
+                archiveImage.src = item.src;
+                archiveImage.alt = item.alt;
+            }
+            archiveCaption.textContent = entry.id === "team" ? item.label : `${item.label} — ${index + 1} of ${count}`;
+            if (entry.id === "team" && !item.videoSrc && archiveImage.complete && archiveImage.naturalWidth > 0) {
+                archiveImage.onload();
+            }
+        };
+        const openArchiveEntry = id => {
+            archiveState.entry = ARCHIVE.find(item => item.id === id);
+            archiveState.index = 0;
+            archiveList.hidden = true;
+            archiveViewer.hidden = false;
+            syncArchiveLayout();
+            archivePath.textContent = `A:\\ARCHIVE\\${archiveState.entry.name}`;
+            renderArchiveImage();
+            archiveViewer.querySelector("[data-archive-back]").focus();
+            if (archiveState.entry.id !== "team") beep(660, 0.08);
+        };
+        const closeArchiveEntry = () => {
+            const id = archiveState.entry && archiveState.entry.id;
+            const wasTeamEntry = archiveState.entry?.id === "team";
+            archiveViewer.hidden = true;
+            archiveList.hidden = false;
+            syncArchiveLayout();
+            archivePath.textContent = "A:\\ARCHIVE";
+            const entryButton = id && archiveList.querySelector(`[data-archive-open="${id}"]`);
+            if (entryButton) entryButton.focus();
+            if (wasTeamEntry) {
+                stopArchiveSound();
+                archiveVideo.pause();
+                archiveVideo.currentTime = 0;
+            } else beep(440, 0.08);
+        };
+        // Debounce rapid navigation so only the last selected screenshot is animated and pinged.
+        const stepArchive = delta => {
+            const target = archiveState.index + delta;
+            if (target < 0 || target >= archiveState.entry.images.length) return;
+            archiveState.index = target;
+            clearTimeout(archiveSwapTimer);
+            if (archiveState.entry.id === "team") {
+                stopArchiveSound();
+                const item = archiveState.entry.images[target];
+                if (item.videoSrc) playArchiveSound(item);
+            }
+            archiveSwapTimer = setTimeout(() => {
+                renderArchiveImage();
+            }, 140);
+            if (archiveState.entry.id !== "team") beep(760, 0.06);
+        };
+
+        archiveList.addEventListener("click", event => {
+            const entry = event.target.closest("[data-archive-open]");
+            if (entry) openArchiveEntry(entry.dataset.archiveOpen);
+        });
+        root.querySelector("[data-archive-back]").addEventListener("click", closeArchiveEntry);
+        archivePrev.addEventListener("click", () => stepArchive(-1));
+        archiveNext.addEventListener("click", () => stepArchive(1));
+        archiveViewer.addEventListener("keydown", event => {
+            if (event.key === "ArrowLeft") stepArchive(-1);
+            else if (event.key === "ArrowRight") stepArchive(1);
+        });
     }
 
     window.openChogIncidentReport = openIncidentReport;

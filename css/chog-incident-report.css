@@ -136,7 +136,7 @@
 .chog-incident-tabs {
     flex: 0 0 auto;
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 2px;
     padding: 6px;
     border-bottom: 1px solid #808080;
@@ -411,6 +411,224 @@
     margin-top: 6px;
 }
 
+#incident-panel-archive {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+}
+
+#incident-panel-archive[hidden] {
+    display: none;
+}
+
+.chog-incident-archive-toolbar {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.chog-incident-archive-path {
+    min-width: 0;
+    flex: 1 1 auto;
+    padding: 3px 6px;
+    overflow: hidden;
+    border: 2px solid;
+    border-color: #808080 #fff #fff #808080;
+    background: #fff;
+    font: 11px "Courier New", monospace;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.chog-incident-archive-list-view {
+    min-height: 0;
+    flex: 1 1 auto;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+.chog-incident-archive-list-view[hidden],
+.chog-incident-archive-viewer[hidden] {
+    display: none;
+}
+
+.chog-incident-archive-list {
+    display: grid;
+    gap: 4px;
+    margin-top: 8px;
+    padding: 4px;
+    border: 2px solid;
+    border-color: #808080 #fff #fff #808080;
+    background: #fff;
+}
+
+.chog-incident-archive-entry {
+    display: grid;
+    grid-template-columns: 22px minmax(0, 1fr) auto;
+    grid-template-areas: "icon name count" "icon note count";
+    align-items: center;
+    column-gap: 8px;
+    padding: 5px 6px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: #111;
+    font: 11px "MS Sans Serif", Tahoma, sans-serif;
+    text-align: left;
+    cursor: pointer;
+}
+
+.chog-incident-archive-entry:hover,
+.chog-incident-archive-entry:focus-visible {
+    border-color: #000080;
+    background: #000080;
+    color: #fff;
+    outline: none;
+}
+
+.chog-incident-archive-icon {
+    grid-area: icon;
+    width: 18px;
+    height: 14px;
+    border: 1px solid #806000;
+    background: #f0d060;
+    box-shadow: inset 1px 1px #fff0a0;
+}
+
+.chog-incident-archive-name {
+    grid-area: name;
+    font-weight: bold;
+    overflow-wrap: anywhere;
+}
+
+.chog-incident-archive-note {
+    grid-area: note;
+    font-size: 10px;
+    opacity: 0.8;
+    overflow-wrap: anywhere;
+}
+
+.chog-incident-archive-count {
+    grid-area: count;
+    font-size: 10px;
+}
+
+.chog-incident.is-team-archive-viewing .chog-incident-heading,
+.chog-incident.is-team-archive-viewing .chog-incident-status {
+    display: none;
+}
+
+.chog-incident-archive-viewer {
+    display: flex;
+    min-height: 0;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.chog-incident-archive-stage {
+    display: flex;
+    min-height: 0;
+    flex: 1 1 auto;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 2px solid;
+    border-color: #808080 #fff #fff #808080;
+    background: #000;
+}
+
+.chog-incident-archive-stage.is-team-archive-stage {
+    background: #32333A;
+}
+
+.chog-incident-archive-stage img {
+    display: block;
+    width: auto;
+    height: auto;
+    min-width: 0;
+    min-height: 0;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.chog-incident-archive-stage video {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-width: 100%;
+    min-height: 100%;
+    object-fit: cover;
+}
+
+.chog-incident-archive-stage img[hidden],
+.chog-incident-archive-stage video[hidden],
+.chog-incident-archive-empty[hidden] {
+    display: none;
+}
+
+.chog-incident-archive-stage img.is-entering,
+.chog-incident-archive-stage video.is-entering {
+    animation: chog-archive-image-enter 180ms ease-out both;
+}
+
+.chog-incident-archive-stage video.is-entering.is-failure-entering {
+    animation: chog-archive-failure-enter 700ms cubic-bezier(0.2, 0.8, 0.25, 1) both;
+}
+
+@keyframes chog-archive-image-enter {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes chog-archive-failure-enter {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.96);
+    }
+    70% {
+        opacity: 1;
+        transform: translateY(-2px) scale(1.005);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.chog-incident-archive-empty {
+    max-width: 420px;
+    margin: 0;
+    padding: 12px;
+    color: #c0c0c0;
+    font: 12px "Courier New", monospace;
+    text-align: center;
+}
+
+.chog-incident-archive-caption {
+    flex: 0 0 auto;
+    color: #333;
+    font-size: 10px;
+    font-weight: bold;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .chog-incident-archive-stage img.is-entering,
+    .chog-incident-archive-stage video.is-entering,
+    .chog-incident-archive-stage video.is-entering.is-failure-entering {
+        animation: none;
+    }
+}
+
 .chog-incident-clipboard {
     display: grid;
     gap: 4px;
@@ -610,6 +828,10 @@
 
     .chog-incident-tab {
         min-height: 32px;
+    }
+
+    .chog-incident-tab:nth-child(5) {
+        grid-column: 1 / -1;
     }
 
     .chog-incident-panel {
