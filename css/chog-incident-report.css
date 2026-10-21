@@ -240,6 +240,376 @@
     margin-top: 3px;
 }
 
+.chog-incident-recovery-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    overflow: hidden;
+}
+
+.chog-incident-recovery-panel[hidden] {
+    display: none;
+}
+
+.chog-incident.is-recovery-viewing .chog-incident-heading,
+.chog-incident.is-recovery-viewing .chog-incident-status {
+    display: none;
+}
+
+#incident-panel-recovery {
+    padding: 8px;
+}
+
+.chog-incident-recovery-intro {
+    flex: 0 0 auto;
+}
+
+.chog-incident-recovery-intro h2 {
+    margin-bottom: 3px;
+}
+
+.chog-incident-recovery-intro p {
+    margin: 2px 0;
+}
+
+.chog-incident-recovery-grid {
+    display: grid;
+    min-height: 0;
+    flex: 1 1 auto;
+    grid-template-columns: minmax(0, 1.7fr) minmax(190px, 0.9fr);
+    gap: 6px;
+}
+
+.chog-incident-recovery-main,
+.chog-incident-recovery-side {
+    display: grid;
+    min-width: 0;
+    min-height: 0;
+    gap: 5px;
+}
+
+.chog-incident-recovery-main {
+    grid-template-rows: minmax(102px, 1.2fr) minmax(68px, 0.8fr) minmax(64px, 0.8fr);
+}
+
+.chog-incident-recovery-side {
+    grid-template-rows: minmax(90px, 1.1fr) auto auto minmax(67px, 0.9fr);
+}
+
+.chog-incident-recovery-side.is-donation-open {
+    grid-template-rows: minmax(64px, 0.8fr) auto auto minmax(60px, 0.8fr);
+}
+
+.chog-incident-recovery-card {
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    border: 2px solid;
+    border-color: #fff #404040 #404040 #fff;
+    background: #d4d0c8;
+    box-shadow: inset 1px 1px #dfdfdf;
+}
+
+.chog-incident-recovery-card h3 {
+    margin: 0;
+    padding: 3px 5px;
+    border-bottom: 1px solid #404040;
+    background: linear-gradient(90deg, #000080, #1084d0);
+    color: #fff;
+    font-size: 10px;
+    line-height: 1.35;
+    text-shadow: 1px 1px #000;
+}
+
+.chog-incident-fund-totals {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 0;
+    margin: 5px;
+    padding: 3px;
+    border: 2px solid;
+    border-color: #808080 #fff #fff #808080;
+    background: #f4f4f4;
+}
+
+.chog-incident-fund-totals > div {
+    display: grid;
+    align-content: center;
+    gap: 1px;
+    min-width: 0;
+    padding: 2px 6px;
+}
+
+.chog-incident-fund-totals > div + div {
+    border-left: 1px solid #aaa;
+}
+
+.chog-incident-fund-totals span,
+.chog-incident-recovery-progress > div:first-child {
+    font-size: 9px;
+    font-weight: bold;
+}
+
+.chog-incident-fund-totals strong {
+    font-size: 16px;
+    line-height: 1.2;
+}
+
+.chog-incident-fund-totals small {
+    color: #444;
+    font-size: 9px;
+}
+
+.chog-incident-recovery-progress {
+    padding: 3px 7px 5px;
+    border-top: 1px solid #aaa;
+}
+
+.chog-incident-recovery-progress > div:first-child {
+    display: flex;
+    justify-content: space-between;
+}
+
+.chog-incident-recovery-track {
+    height: 13px;
+    margin-top: 3px;
+    padding: 2px;
+    border: 2px solid;
+    border-color: #808080 #fff #fff #808080;
+    background: #fff;
+}
+
+.chog-incident-recovery-track span {
+    display: block;
+    height: 100%;
+    background: repeating-linear-gradient(90deg, #000080 0 8px, #fff 8px 10px);
+}
+
+.chog-incident-recovery-progress p {
+    margin: 3px 0 0;
+    color: #444;
+    font-size: 9px;
+}
+
+.chog-incident-milestone-list {
+    display: grid;
+    height: calc(100% - 18px);
+    margin: 4px;
+    border: 2px solid;
+    border-color: #808080 #fff #fff #808080;
+    background: #f4f4f4;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.chog-incident-milestone {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    border-right: 1px solid #aaa;
+    font-size: 10px;
+}
+
+.chog-incident-milestone:last-child {
+    border-right: 0;
+}
+
+.chog-incident-milestone-art {
+    width: 23px;
+    height: 23px;
+    border: 1px dashed #808080;
+    background: #fff;
+}
+
+.chog-incident-contributions-table-wrap {
+    max-height: calc(100% - 20px);
+    margin: 4px;
+    overflow: auto;
+    border: 2px solid;
+    border-color: #808080 #fff #fff #808080;
+    background: #fff;
+}
+
+.chog-incident-contributions table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9px;
+    white-space: nowrap;
+}
+
+.chog-incident-contributions th {
+    padding: 2px 4px;
+    background: #d4d0c8;
+    text-align: left;
+}
+
+.chog-incident-contributions td {
+    padding: 3px 4px;
+    border-top: 1px solid #ccc;
+}
+
+.chog-incident-contribution-empty {
+    color: #555;
+    text-align: center;
+    white-space: normal;
+}
+
+.chog-incident-status-report-body {
+    display: flex;
+    height: calc(100% - 20px);
+    min-height: 0;
+    align-items: center;
+    justify-content: center;
+    margin: 4px;
+    padding: 3px;
+    overflow: hidden;
+    border: 2px solid;
+    border-color: #808080 #fff #fff #808080;
+    background: #fff;
+}
+
+.chog-incident-watson-image {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.chog-incident-contribute-area {
+    min-width: 0;
+}
+
+.chog-incident-donation-form {
+    display: grid;
+    gap: 4px;
+    margin-top: 5px;
+    padding: 6px;
+    border: 2px solid;
+    border-color: #fff #808080 #808080 #fff;
+    background: #d4d0c8;
+}
+
+.chog-incident-donation-form[hidden],
+.chog-incident-donation-form [hidden] {
+    display: none;
+}
+
+.chog-incident-donation-form label {
+    font-size: 9px;
+    font-weight: bold;
+}
+
+.chog-incident-donation-form select,
+.chog-incident-donation-form input {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 25px;
+    padding: 3px 5px;
+    border: 2px solid;
+    border-color: #808080 #fff #fff #808080;
+    background: #fff;
+    color: #111;
+    font: 11px Tahoma, sans-serif;
+}
+
+.chog-incident-donation-form button {
+    min-height: 25px;
+    padding: 3px 5px;
+    border: 2px solid;
+    border-color: #fff #404040 #404040 #fff;
+    background: #d4d0c8;
+    color: #111;
+    font: bold 9px "MS Sans Serif", Tahoma, sans-serif;
+    cursor: pointer;
+}
+
+.chog-incident-donation-form button:disabled {
+    color: #777;
+    cursor: default;
+}
+
+.chog-incident-donation-form p {
+    margin: 0;
+    color: #222;
+    font-size: 9px;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+.chog-incident-donation-data-status {
+    color: #444 !important;
+}
+
+.chog-incident-contribute {
+    width: 100%;
+    min-height: 38px;
+    padding: 5px;
+    border: 2px solid;
+    border-color: #8bff9c #00551a #00551a #8bff9c;
+    background: #00852b;
+    color: #fff;
+    font: bold 13px "MS Sans Serif", Tahoma, sans-serif;
+    text-shadow: 1px 1px #004014;
+    cursor: pointer;
+}
+
+.chog-incident-contribute:active {
+    border-color: #00551a #8bff9c #8bff9c #00551a;
+}
+
+.chog-incident-contribute-area p {
+    margin: 3px 0 0;
+    color: #800000;
+    font-size: 9px;
+}
+
+.chog-incident-contribute-area [data-recovery-message] {
+    color: #000080;
+}
+
+.chog-incident-contribute-area [data-recovery-message].is-error {
+    color: #800000;
+}
+
+.chog-incident-recovery-disclaimer {
+    margin: 0 !important;
+    padding: 5px 6px;
+    border: 2px solid;
+    border-color: #808080 #fff #fff #808080;
+    background: #d4d0c8;
+    font-size: 9px;
+    line-height: 1.35;
+}
+
+.chog-incident-next-milestone-body {
+    display: flex;
+    height: calc(100% - 18px);
+    align-items: center;
+    gap: 8px;
+    margin: 4px;
+    padding: 4px;
+    border: 2px solid;
+    border-color: #808080 #fff #fff #808080;
+    background: #f4f4f4;
+}
+
+.chog-incident-next-art {
+    width: 30px;
+    height: 30px;
+    flex: 0 0 30px;
+    border: 1px dashed #808080;
+    background: #fff;
+}
+
+.chog-incident-next-milestone-body p {
+    margin: 0;
+    font-size: 10px;
+}
+
 .chog-incident-link-button {
     display: inline-flex;
     align-items: center;
@@ -812,6 +1182,41 @@
 }
 
 @media (max-width: 600px) {
+    .chog-incident-recovery-panel {
+        overflow-y: auto;
+    }
+
+    .chog-incident-recovery-grid {
+        flex: 0 0 auto;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .chog-incident-recovery-main,
+    .chog-incident-recovery-side {
+        grid-template-rows: auto;
+        grid-auto-rows: minmax(72px, auto);
+    }
+
+    .chog-incident-recovery-fund {
+        min-height: 118px;
+    }
+
+    .chog-incident-milestones {
+        min-height: 76px;
+    }
+
+    .chog-incident-contributions {
+        min-height: 68px;
+    }
+
+    .chog-incident-status-report {
+        min-height: 100px;
+    }
+
+    .chog-incident-next-milestone {
+        min-height: 76px;
+    }
+
     .chog-incident-facts b {
         display: block;
         min-width: 0;

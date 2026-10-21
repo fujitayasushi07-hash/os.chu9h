@@ -8,11 +8,15 @@
         { id: "summary", label: "CASE SUMMARY", status: "CASE FILE OPEN" },
         { id: "evidence", label: "ON-CHAIN EVIDENCE", status: "CHAIN DATA NOT VERIFIED HERE" },
         { id: "scene", label: "THE CRIME SCENE", status: "CLIPBOARD SUSPECT IDENTIFIED" },
-        { id: "recovery", label: "RECOVERY ATTEMPT", status: "RECOVERY STATUS UNRESOLVED" },
-        { id: "archive", label: "SUPPORT TICKET ARCHIVE", status: "ARCHIVE MOUNTED READ-ONLY" }
+        { id: "archive", label: "SUPPORT TICKET ARCHIVE", status: "ARCHIVE MOUNTED READ-ONLY" },
+        { id: "recovery", label: "RECOVERY ATTEMPT", status: "RECOVERY STATUS UNRESOLVED" }
     ];
 
     const CHOG_ADDRESS = "0x350035555E10d9AfAF1566AaebfCeD5BA6C27777";
+    const RECOVERY_FUND_ADDRESS = "0x48a22f7683a8541292e1eED3c68110CD7e4B39Be";
+    const RECOVERY_FUND_API = "/api/verify/recovery-fund";
+    const RECOVERY_USD_GOAL_CENTS = 61400n;
+    const RECOVERY_TOKEN_DECIMALS = 18n;
     const RELAY_IMAGE = "assets/images/incident-614-relay.png";
     const MONAD_IMAGE = "assets/images/incident-614-monadvision.png";
     const SCENE_STEPS = [
@@ -23,6 +27,113 @@
         { title: "THE CONTRACT PAGE" },
         { title: "THE VERDICT" }
     ];
+    const RECOVERY_FUND = {
+        goalUsd: 614,
+        contributedUsd: 0,
+        contributedChog: 0,
+        contributions: []
+    };
+    const RECOVERY_MILESTONES = [10, 25, 50, 75, 100];
+
+    function recoveryDashboardMarkup() {
+        const { goalUsd, contributedUsd, contributedChog, contributions } = RECOVERY_FUND;
+        const progress = Math.min(100, Math.max(0, contributedUsd / goalUsd * 100));
+        const nextMilestone = RECOVERY_MILESTONES.find(milestone => milestone > progress);
+        const formatUsd = value => `$${value.toFixed(2)}`;
+        const milestoneMarkup = RECOVERY_MILESTONES.map(milestone => `
+            <div class="chog-incident-milestone" data-recovery-milestone="${milestone}">
+                <strong>${milestone}%</strong>
+                <span class="chog-incident-milestone-art" aria-hidden="true"></span>
+            </div>
+        `).join("");
+        const contributionRows = contributions.length
+            ? contributions.map((contribution, index) => `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${contribution.wallet}</td>
+                    <td>${contribution.amountChog.toLocaleString()} $CHOG</td>
+                    <td>${formatUsd(contribution.usd)}</td>
+                    <td>${contribution.time}</td>
+                </tr>
+            `).join("")
+            : '<tr><td class="chog-incident-contribution-empty" colspan="5">No contributions recorded yet</td></tr>';
+
+        return `
+            <div class="chog-incident-recovery-intro">
+                <h2>RECOVERY ATTEMPT</h2>
+                <p>The original clipboard incident remains unresolved. Community assistance protocol initiated.</p>
+                <p>This donation fund is part of the recovery attempt, supporting the CHOGWARE project and community.</p>
+            </div>
+            <div class="chog-incident-recovery-grid">
+                <div class="chog-incident-recovery-main">
+                    <section class="chog-incident-recovery-card chog-incident-recovery-fund" aria-labelledby="recovery-fund-title">
+                        <h3 id="recovery-fund-title">$614 RECOVERY FUND</h3>
+                        <div class="chog-incident-fund-totals">
+                            <div><span>USD-EQUIVALENT GOAL</span><strong data-recovery-usd-total>${formatUsd(contributedUsd)} / ${formatUsd(goalUsd)}</strong></div>
+                            <div><span>TOTAL $CHOG CONTRIBUTED</span><strong data-recovery-token-total>${contributedChog.toLocaleString()} $CHOG</strong><small data-recovery-usd-estimate>≈ ${formatUsd(contributedUsd)} USD (est.)</small></div>
+                        </div>
+                        <div class="chog-incident-recovery-progress">
+                            <div><strong>RECOVERY PROGRESS</strong><strong data-recovery-progress-label>${progress.toFixed(0)}%</strong></div>
+                            <div class="chog-incident-recovery-track" role="progressbar" aria-label="Recovery fund progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${progress}" data-recovery-progress>
+                                <span style="width: ${progress}%"></span>
+                            </div>
+                            <p>Every contribution brings us closer to recovering from this emotional damage.</p>
+                        </div>
+                    </section>
+                    <section class="chog-incident-recovery-card chog-incident-milestones" aria-labelledby="recovery-milestones-title">
+                        <h3 id="recovery-milestones-title">MILESTONES</h3>
+                        <div class="chog-incident-milestone-list">${milestoneMarkup}</div>
+                    </section>
+                    <section class="chog-incident-recovery-card chog-incident-contributions" aria-labelledby="recovery-contributions-title">
+                        <h3 id="recovery-contributions-title">RECENT CONTRIBUTIONS</h3>
+                        <div class="chog-incident-contributions-table-wrap">
+                            <table>
+                                <thead><tr><th>#</th><th>WALLET</th><th>AMOUNT</th><th>USD (est.)</th><th>TIME</th></tr></thead>
+                                <tbody data-recovery-contributions>${contributionRows}</tbody>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+                <aside class="chog-incident-recovery-side">
+                    <section class="chog-incident-recovery-card chog-incident-status-report" aria-labelledby="recovery-status-title">
+                        <h3 id="recovery-status-title">DR. WATSON'S STATUS REPORT</h3>
+                        <div class="chog-incident-status-report-body">
+                            <img class="chog-incident-watson-image" src="assets/images/chog-dono.png" alt="CHOG donation artwork">
+                        </div>
+                    </section>
+                    <div class="chog-incident-contribute-area">
+                        <button type="button" class="chog-incident-contribute" data-recovery-contribute aria-expanded="false">DONATE</button>
+                        <div class="chog-incident-donation-form" data-recovery-form hidden>
+                            <label for="recovery-usd-amount">USD TARGET</label>
+                            <select id="recovery-usd-amount" data-recovery-amount>
+                                <option value="50">$0.50</option>
+                                <option value="100">$1.00</option>
+                                <option value="500">$5.00</option>
+                                <option value="custom">Custom amount</option>
+                            </select>
+                            <input type="number" min="0.50" max="614.00" step="0.01" value="0.50" inputmode="decimal" aria-label="Custom USD donation amount" data-recovery-custom hidden>
+                            <button type="button" data-recovery-prepare>CONNECT WALLET &amp; QUOTE</button>
+                            <p data-recovery-quote role="status" hidden></p>
+                            <button type="button" data-recovery-send hidden disabled>CONFIRM IN WALLET</button>
+                            <button type="button" data-recovery-cancel>CANCEL</button>
+                        </div>
+                        <p data-recovery-message role="status" aria-live="polite" hidden></p>
+                        <p class="chog-incident-donation-data-status" data-recovery-data-status role="status" aria-live="polite">Loading verified contributions…</p>
+                    </div>
+                    <p class="chog-incident-recovery-disclaimer">This is a community contribution to CHOGWARE and the Recovery Fund. It does not recover the original transaction or guarantee repayment.</p>
+                    <section class="chog-incident-recovery-card chog-incident-next-milestone" aria-labelledby="recovery-next-title">
+                        <h3 id="recovery-next-title">NEXT MILESTONE</h3>
+                        <div class="chog-incident-next-milestone-body">
+                            <span class="chog-incident-next-art" aria-hidden="true"></span>
+                            ${nextMilestone
+                                ? `<p data-recovery-next><strong>${nextMilestone}%</strong> progress<br>${formatUsd(Math.max(0, goalUsd * nextMilestone / 100 - contributedUsd))} USD (est.) to reach</p>`
+                                : '<p data-recovery-next>All milestones reached.</p>'}
+                        </div>
+                    </section>
+                </aside>
+            </div>
+        `;
+    }
 
     // Only screenshots that exist in the project are listed. To archive more, save the file under assets/images/ and add it to `images`.
     const ARCHIVE = [
@@ -241,13 +352,6 @@
                         </div>
                     </section>
 
-                    <section class="chog-incident-panel" id="incident-panel-recovery" role="tabpanel" aria-labelledby="incident-tab-recovery" data-incident-panel="recovery" hidden>
-                        <h2>RECOVERY ATTEMPT</h2>
-                        <p>According to the user's account, they contacted <strong>Relay</strong>, <strong>nad.fun</strong>, and the <strong>CHOG founders</strong> seeking help with the incident.</p>
-                        <p>This summary does not quote private conversations or imply a response or recovery outcome. The case is still marked unresolved.</p>
-                        <div class="chog-incident-callout">Status: waiting on humans. The blockchain does not have a help-desk extension.</div>
-                    </section>
-
                     <section class="chog-incident-panel" id="incident-panel-archive" role="tabpanel" aria-labelledby="incident-tab-archive" data-incident-panel="archive" hidden>
                         <div class="chog-incident-archive-toolbar">
                             <span class="chog-incident-archive-path" data-archive-path>A:\\ARCHIVE</span>
@@ -267,10 +371,14 @@
                             </div>
                         </div>
                     </section>
+
+                    <section class="chog-incident-panel chog-incident-recovery-panel" id="incident-panel-recovery" role="tabpanel" aria-labelledby="incident-tab-recovery" data-incident-panel="recovery" hidden>
+                        ${recoveryDashboardMarkup()}
+                    </section>
                 </div>
 
                 <footer class="chog-incident-footer">
-                    <span>DR. WATSON: NO WALLET CONNECTED • NO TRANSACTION ACTIONS ENABLED</span>
+                    <span>DR. WATSON: WALLET ACTIONS REQUIRE YOUR CONFIRMATION</span>
                 </footer>
 
                 <div class="chog-incident-dialog-layer" data-incident-viewer hidden>
@@ -327,6 +435,363 @@
         }
         const root = win.querySelector(".chog-incident");
         const status = root.querySelector("[data-incident-status]");
+        const recoveryContributeButton = root.querySelector("[data-recovery-contribute]");
+        const recoveryForm = root.querySelector("[data-recovery-form]");
+        const recoveryMessage = root.querySelector("[data-recovery-message]");
+        const recoveryDataStatus = root.querySelector("[data-recovery-data-status]");
+        const recoveryAmount = root.querySelector("[data-recovery-amount]");
+        const recoveryCustomAmount = root.querySelector("[data-recovery-custom]");
+        const recoveryPrepareButton = root.querySelector("[data-recovery-prepare]");
+        const recoverySendButton = root.querySelector("[data-recovery-send]");
+        const recoveryQuote = root.querySelector("[data-recovery-quote]");
+        let recoveryIntent = null;
+        let pendingConfirmation = null;
+
+        const setRecoveryMessage = (text, isError = false) => {
+            recoveryMessage.textContent = text;
+            recoveryMessage.hidden = !text;
+            recoveryMessage.classList.toggle("is-error", isError);
+        };
+
+        const formatUsdCents = cents => {
+            const value = BigInt(cents);
+            return `$${value / 100n}.${(value % 100n).toString().padStart(2, "0")}`;
+        };
+
+        const formatTokenDisplay = amountRaw => {
+            const raw = BigInt(amountRaw);
+            const whole = raw / (10n ** RECOVERY_TOKEN_DECIMALS);
+            const fraction = (raw % (10n ** RECOVERY_TOKEN_DECIMALS))
+                .toString()
+                .padStart(Number(RECOVERY_TOKEN_DECIMALS), "0")
+                .slice(0, 6)
+                .replace(/0+$/, "");
+            return `${whole.toLocaleString()}${fraction ? `.${fraction}` : ""}`;
+        };
+
+        const requestRecoveryApi = async (method, body) => {
+            let response;
+            try {
+                response = await fetch(RECOVERY_FUND_API, {
+                    method,
+                    headers: body ? { "Content-Type": "application/json" } : undefined,
+                    body: body ? JSON.stringify(body) : undefined,
+                    cache: "no-store"
+                });
+            } catch {
+                throw new Error("Recovery Fund service could not be reached.");
+            }
+
+            let result;
+            try {
+                result = await response.json();
+            } catch {
+                throw new Error("Recovery Fund service returned an invalid response.");
+            }
+            if (!response.ok && response.status !== 202) {
+                throw new Error(result.error || "Recovery Fund request failed.");
+            }
+            return { response, result };
+        };
+
+        const renderRecoverySummary = donations => {
+            const totalUsdCents = BigInt(donations.totalUsdCents);
+            const progressBasisPoints = totalUsdCents * 10000n / RECOVERY_USD_GOAL_CENTS;
+            const progress = Number(progressBasisPoints > 10000n ? 10000n : progressBasisPoints) / 100;
+            const usdTotal = root.querySelector("[data-recovery-usd-total]");
+            const tokenTotal = root.querySelector("[data-recovery-token-total]");
+            const usdEstimate = root.querySelector("[data-recovery-usd-estimate]");
+            const progressLabel = root.querySelector("[data-recovery-progress-label]");
+            const progressBar = root.querySelector("[data-recovery-progress]");
+
+            usdTotal.textContent = `${formatUsdCents(totalUsdCents)} / $614.00`;
+            tokenTotal.textContent = `${formatTokenDisplay(donations.totalAmountRaw)} $CHOG`;
+            usdEstimate.textContent = `≈ ${formatUsdCents(totalUsdCents)} USD (est.)`;
+            progressLabel.textContent = `${progress.toFixed(0)}%`;
+            progressBar.setAttribute("aria-valuenow", String(progress));
+            progressBar.querySelector("span").style.width = `${progress}%`;
+
+            RECOVERY_MILESTONES.forEach(milestone => {
+                const item = root.querySelector(`[data-recovery-milestone="${milestone}"]`);
+                if (item) item.classList.toggle(
+                    "is-reached",
+                    totalUsdCents >= RECOVERY_USD_GOAL_CENTS * BigInt(milestone) / 100n
+                );
+            });
+
+            const nextMilestone = RECOVERY_MILESTONES.find(milestone =>
+                totalUsdCents < RECOVERY_USD_GOAL_CENTS * BigInt(milestone) / 100n
+            );
+            const nextMilestoneText = root.querySelector("[data-recovery-next]");
+            if (nextMilestone) {
+                const targetCents = RECOVERY_USD_GOAL_CENTS * BigInt(nextMilestone) / 100n;
+                nextMilestoneText.textContent =
+                    `${nextMilestone}% progress — ${formatUsdCents(targetCents - totalUsdCents)} USD (est.) to reach`;
+            } else {
+                nextMilestoneText.textContent = "All milestones reached.";
+            }
+
+            const tbody = root.querySelector("[data-recovery-contributions]");
+            tbody.replaceChildren();
+            if (!donations.recentContributions.length) {
+                const row = document.createElement("tr");
+                const cell = document.createElement("td");
+                cell.className = "chog-incident-contribution-empty";
+                cell.colSpan = 5;
+                cell.textContent = "No contributions recorded yet";
+                row.append(cell);
+                tbody.append(row);
+                return;
+            }
+
+            donations.recentContributions.forEach((contribution, index) => {
+                const row = document.createElement("tr");
+                const values = [
+                    String(index + 1),
+                    `${contribution.wallet.slice(0, 6)}…${contribution.wallet.slice(-4)}`,
+                    `${formatTokenDisplay(contribution.amountRaw)} $CHOG`,
+                    formatUsdCents(contribution.usdAmountCents),
+                    new Date(contribution.timestamp).toLocaleString()
+                ];
+                values.forEach(value => {
+                    const cell = document.createElement("td");
+                    cell.textContent = value;
+                    row.append(cell);
+                });
+                tbody.append(row);
+            });
+        };
+
+        const refreshRecoverySummary = async () => {
+            recoveryDataStatus.hidden = false;
+            recoveryDataStatus.textContent = "Loading verified contributions…";
+            try {
+                const { result } = await requestRecoveryApi("GET");
+                if (!result.success || !result.donations) {
+                    throw new Error("Verified contribution data is unavailable.");
+                }
+                renderRecoverySummary(result.donations);
+                recoveryDataStatus.hidden = true;
+            } catch {
+                recoveryDataStatus.textContent =
+                    "Verified contribution data is unavailable; displayed totals may be stale.";
+            }
+        };
+
+        const getSelectedUsdCents = () => {
+            if (recoveryAmount.value !== "custom") {
+                return Number(recoveryAmount.value);
+            }
+            const match = recoveryCustomAmount.value.trim()
+                .match(/^(\d+)(?:\.(\d{1,2}))?$/);
+            if (!match) throw new Error("Enter a USD amount using up to two decimal places.");
+            const cents = Number(match[1]) * 100 + Number((match[2] || "").padEnd(2, "0"));
+            if (!Number.isSafeInteger(cents) || cents < 50 || cents > 61400) {
+                throw new Error("Custom donations must be between $0.50 and $614.00.");
+            }
+            return cents;
+        };
+
+        const ensureRecoveryWallet = async () => {
+            const provider = window.ethereum;
+            if (!provider || typeof provider.request !== "function") {
+                throw new Error("No compatible injected wallet was found.");
+            }
+            const accounts = await provider.request({ method: "eth_requestAccounts" });
+            if (!Array.isArray(accounts) || !accounts.length ||
+                typeof accounts[0] !== "string" ||
+                !/^0x[0-9a-f]{40}$/i.test(accounts[0])) {
+                throw new Error("The wallet did not provide a valid account.");
+            }
+
+            const targetChainId = "0x8f";
+            let chainId = await provider.request({ method: "eth_chainId" });
+            if (typeof chainId !== "string" || chainId.toLowerCase() !== targetChainId) {
+                try {
+                    await provider.request({
+                        method: "wallet_switchEthereumChain",
+                        params: [{ chainId: targetChainId }]
+                    });
+                } catch (error) {
+                    if (!error || error.code !== 4902) throw error;
+                    await provider.request({
+                        method: "wallet_addEthereumChain",
+                        params: [{
+                            chainId: targetChainId,
+                            chainName: "Monad Mainnet",
+                            nativeCurrency: { name: "MON", symbol: "MON", decimals: 18 },
+                            rpcUrls: ["https://rpc.monad.xyz"],
+                            blockExplorerUrls: ["https://monadscan.com"]
+                        }]
+                    });
+                }
+                chainId = await provider.request({ method: "eth_chainId" });
+                if (typeof chainId !== "string" ||
+                    chainId.toLowerCase() !== targetChainId) {
+                    throw new Error("Switch your wallet to Monad Mainnet to continue.");
+                }
+            }
+            return { provider, wallet: accounts[0].toLowerCase() };
+        };
+
+        const confirmRecoveryDonation = async () => {
+            if (!pendingConfirmation) return;
+            recoverySendButton.disabled = true;
+            recoverySendButton.textContent = "VERIFYING…";
+            setRecoveryMessage("Waiting for successful, finalized confirmation on Monad.");
+            try {
+                for (let attempt = 0; attempt < 45; attempt++) {
+                    const { response, result } = await requestRecoveryApi("POST", {
+                        action: "confirm",
+                        intentId: pendingConfirmation.intentId,
+                        transactionHash: pendingConfirmation.transactionHash
+                    });
+                    if (response.status !== 202 && !result.pending) {
+                        if (!result.success) throw new Error(result.error || "Donation verification failed.");
+                        pendingConfirmation = null;
+                        recoverySendButton.hidden = true;
+                        recoverySendButton.textContent = "CONFIRM IN WALLET";
+                        setRecoveryMessage("Donation verified and added to the Recovery Fund.");
+                        await refreshRecoverySummary();
+                        return;
+                    }
+                    if (attempt < 44) {
+                        await new Promise(resolve => setTimeout(resolve, 4000));
+                    }
+                }
+                recoverySendButton.disabled = false;
+                recoverySendButton.textContent = "CHECK CONFIRMATION";
+                setRecoveryMessage("Still awaiting finality. Use CHECK CONFIRMATION to try again.");
+            } catch (error) {
+                recoverySendButton.disabled = false;
+                recoverySendButton.textContent = "CHECK CONFIRMATION";
+                setRecoveryMessage(error.message || "Donation verification failed.", true);
+            }
+        };
+
+        const prepareRecoveryDonation = async () => {
+            recoveryPrepareButton.disabled = true;
+            recoverySendButton.hidden = true;
+            recoverySendButton.disabled = true;
+            recoveryIntent = null;
+            recoveryQuote.hidden = true;
+            setRecoveryMessage("");
+            try {
+                const usdAmountCents = getSelectedUsdCents();
+                const { provider, wallet } = await ensureRecoveryWallet();
+                const { result } = await requestRecoveryApi("POST", {
+                    action: "create-intent",
+                    wallet,
+                    usdAmountCents
+                });
+                if (!result.success || !result.intent ||
+                    result.intent.wallet !== wallet ||
+                    !/^[0-9a-f]{1,78}$/.test(result.intent.amountRaw)) {
+                    throw new Error("Could not prepare a verified donation quote.");
+                }
+                recoveryIntent = { ...result.intent, provider };
+                recoveryQuote.textContent =
+                    `${formatUsdCents(usdAmountCents)} target ≈ ${result.intent.amountChog} $CHOG at $${result.intent.quotePriceUsd} per CHOG. Quote from ${result.intent.quoteTimestamp}; expires ${new Date(result.intent.expiresAt).toLocaleTimeString()}. Network gas is separate.`;
+                recoveryQuote.hidden = false;
+                recoverySendButton.textContent = "CONFIRM IN WALLET";
+                recoverySendButton.hidden = false;
+                recoverySendButton.disabled = false;
+            } catch (error) {
+                setRecoveryMessage(error.message || "Could not prepare a donation.", true);
+            } finally {
+                recoveryPrepareButton.disabled = false;
+            }
+        };
+
+        const sendRecoveryDonation = async () => {
+            if (pendingConfirmation) {
+                await confirmRecoveryDonation();
+                return;
+            }
+            if (!recoveryIntent) return;
+            if (Date.parse(recoveryIntent.expiresAt) <= Date.now()) {
+                recoveryIntent = null;
+                recoverySendButton.hidden = true;
+                setRecoveryMessage("This quote expired. Prepare a fresh quote before sending.", true);
+                return;
+            }
+
+            recoverySendButton.disabled = true;
+            setRecoveryMessage("Review and approve the direct $CHOG transfer in your wallet.");
+            try {
+                const provider = recoveryIntent.provider;
+                const accounts = await provider.request({ method: "eth_accounts" });
+                const chainId = await provider.request({ method: "eth_chainId" });
+                if (!Array.isArray(accounts) ||
+                    !accounts.some(account =>
+                        typeof account === "string" &&
+                        account.toLowerCase() === recoveryIntent.wallet
+                    ) ||
+                    typeof chainId !== "string" ||
+                    chainId.toLowerCase() !== "0x8f") {
+                    throw new Error("Wallet account or network changed. Connect and prepare the quote again.");
+                }
+                const amountWord = BigInt(recoveryIntent.amountRaw).toString(16).padStart(64, "0");
+                const calldata = "0xa9059cbb" +
+                    RECOVERY_FUND_ADDRESS.slice(2).toLowerCase().padStart(64, "0") +
+                    amountWord;
+                const transactionHash = await provider.request({
+                    method: "eth_sendTransaction",
+                    params: [{
+                        from: recoveryIntent.wallet,
+                        to: CHOG_ADDRESS,
+                        value: "0x0",
+                        data: calldata
+                    }]
+                });
+                if (typeof transactionHash !== "string" ||
+                    !/^0x[0-9a-f]{64}$/i.test(transactionHash)) {
+                    throw new Error("Wallet returned an invalid transaction hash.");
+                }
+                pendingConfirmation = {
+                    intentId: recoveryIntent.id,
+                    transactionHash
+                };
+                recoverySendButton.textContent = "VERIFYING…";
+                await confirmRecoveryDonation();
+            } catch (error) {
+                recoverySendButton.disabled = false;
+                if (pendingConfirmation) recoverySendButton.textContent = "CHECK CONFIRMATION";
+                setRecoveryMessage(error.message || "Wallet transfer was not completed.", true);
+            }
+        };
+
+        recoveryContributeButton.addEventListener("click", () => {
+            recoveryForm.hidden = !recoveryForm.hidden;
+            recoveryContributeButton.setAttribute("aria-expanded", String(!recoveryForm.hidden));
+            recoveryForm.closest(".chog-incident-recovery-side")
+                .classList.toggle("is-donation-open", !recoveryForm.hidden);
+            if (!recoveryForm.hidden && pendingConfirmation) {
+                recoverySendButton.hidden = false;
+                recoverySendButton.disabled = false;
+                recoverySendButton.textContent = "CHECK CONFIRMATION";
+            }
+        });
+        recoveryAmount.addEventListener("change", () => {
+            recoveryCustomAmount.hidden = recoveryAmount.value !== "custom";
+            recoveryIntent = null;
+            recoveryQuote.hidden = true;
+            recoverySendButton.hidden = true;
+        });
+        recoveryCustomAmount.addEventListener("input", () => {
+            recoveryIntent = null;
+            recoveryQuote.hidden = true;
+            recoverySendButton.hidden = true;
+        });
+        recoveryPrepareButton.addEventListener("click", prepareRecoveryDonation);
+        recoverySendButton.addEventListener("click", sendRecoveryDonation);
+        root.querySelector("[data-recovery-cancel]").addEventListener("click", () => {
+            recoveryForm.hidden = true;
+            recoveryContributeButton.setAttribute("aria-expanded", "false");
+            recoveryForm.closest(".chog-incident-recovery-side")
+                .classList.remove("is-donation-open");
+        });
+        refreshRecoverySummary();
         const tabs = Array.from(root.querySelectorAll("[data-incident-tab]"));
         const panels = Array.from(root.querySelectorAll("[data-incident-panel]"));
         const activateTab = (tab, moveFocus) => {
@@ -338,6 +803,7 @@
             panels.forEach(panel => {
                 panel.hidden = panel.dataset.incidentPanel !== tab.dataset.incidentTab;
             });
+            root.classList.toggle("is-recovery-viewing", tab.dataset.incidentTab === "recovery");
             const section = SECTIONS.find(item => item.id === tab.dataset.incidentTab);
             syncArchiveLayout();
             status.textContent = `DIAGNOSTIC STATUS: ${section.status}`;
