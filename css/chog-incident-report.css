@@ -208,6 +208,38 @@
     background: #fff;
 }
 
+#incident-panel-summary,
+#incident-panel-evidence,
+#incident-panel-recovery {
+    padding: 10px 12px;
+}
+
+#incident-panel-summary h2,
+#incident-panel-evidence h2,
+#incident-panel-recovery h2 {
+    margin-bottom: 6px;
+}
+
+#incident-panel-summary p,
+#incident-panel-evidence p,
+#incident-panel-recovery p {
+    margin: 4px 0;
+}
+
+#incident-panel-summary .chog-incident-callout,
+#incident-panel-evidence .chog-incident-callout,
+#incident-panel-recovery .chog-incident-callout {
+    margin-top: 8px;
+    padding: 6px 8px;
+}
+
+#incident-panel-summary .chog-incident-link-button,
+#incident-panel-evidence .chog-incident-link-button,
+#incident-panel-recovery .chog-incident-link-button {
+    min-height: 27px;
+    margin-top: 3px;
+}
+
 .chog-incident-link-button {
     display: inline-flex;
     align-items: center;

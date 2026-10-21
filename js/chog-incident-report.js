@@ -40,16 +40,46 @@
                 alt: "CHOGSION FAILED animation"
             })
         },
-        { id: "nadfun", name: "NADFUN_SUPPORT.log", note: "Nad.fun support screenshots", images: [] },
-        { id: "relay", name: "RELAY_SUPPORT.log", note: "Relay support screenshots", images: [] },
+        {
+            id: "nadfun",
+            name: "NADFUN_SUPPORT.log",
+            note: "Nad.fun support screenshots",
+            images: [1, 2, 3, 4, 5, 6, 7].map((number, index) => ({
+                src: `assets/images/chogteamchat/NADCHAT/NADCHAT${number}.png`,
+                label: `NAD.FUN SUPPORT · SCREENSHOT ${index + 1} OF 7`,
+                alt: `Nad.fun support screenshot ${index + 1} of 7`
+            })).concat({
+                videoSrc: "assets/videos/chogsion%20failed!.mp4",
+                label: "CHOGSION FAILED",
+                alt: "CHOGSION FAILED animation"
+            })
+        },
+        {
+            id: "relay",
+            name: "RELAY_SUPPORT.log",
+            note: "Relay support screenshots",
+            images: [{
+                src: "assets/images/chogteamchat/NADCHAT/Relay.png",
+                label: "RELAY SUPPORT · SCREENSHOT 1 OF 1",
+                alt: "Relay support screenshot"
+            }].concat({
+                videoSrc: "assets/videos/chogsion%20failed!.mp4",
+                label: "CHOGSION FAILED",
+                alt: "CHOGSION FAILED animation"
+            })
+        },
         {
             id: "original",
             name: "ORIGINAL_EVIDENCE",
             note: "Original transaction and token screenshots",
             images: [
-                { src: RELAY_IMAGE, label: "relay-receipt.png", alt: "Screenshot of the Relay transaction details page showing a successful Solana to Monad USDC bridge" },
-                { src: MONAD_IMAGE, label: "monadvision.png", alt: "Screenshot of a MonadVision page titled Contract (Chog) showing a token portfolio" }
-            ]
+                { src: "assets/images/chogteamchat/ORIGINAL_EVIDENCE1.png", label: "ORIGINAL EVIDENCE · SCREENSHOT 1 OF 2", alt: "Original evidence screenshot 1" },
+                { src: "assets/images/chogteamchat/ORIGINAL_EVIDENCE2.png", label: "ORIGINAL EVIDENCE · SCREENSHOT 2 OF 2", alt: "Original evidence screenshot 2" }
+            ].concat({
+                videoSrc: "assets/videos/chogsion%20failed!.mp4",
+                label: "CHOGSION FAILED",
+                alt: "CHOGSION FAILED animation"
+            })
         }
     ];
 
@@ -440,6 +470,9 @@
         const archiveNext = root.querySelector("[data-archive-next]");
         const archiveStage = root.querySelector(".chog-incident-archive-stage");
         const archiveState = { entry: null, index: 0 };
+        const usesTeamArchiveBehavior = entry => entry?.id === "team" || entry?.id === "nadfun" || entry?.id === "relay" || entry?.id === "original";
+        const usesExpandedArchiveLayout = entry => usesTeamArchiveBehavior(entry) || entry?.id === "original";
+        const hasSingleScreenshot = entry => entry?.id === "relay" && entry.images.length === 1 && !entry.images[0].videoSrc;
         const archiveSound = new Audio();
         archiveSound.preload = "auto";
         let archiveSwapTimer = 0;
@@ -450,7 +483,7 @@
             archiveSound.currentTime = 0;
         };
         const playArchiveSound = item => {
-            if (archiveState.entry?.id !== "team") return;
+            if (!usesTeamArchiveBehavior(archiveState.entry)) return;
             const soundSrc = item.videoSrc
                 ? "assets/sounds/chogsion%20failed-%20Sound%20Effect%20(HD).mp3"
                 : "assets/sounds/Discord%20Ping%20Sound%20Effect.mp3";
@@ -467,17 +500,18 @@
         // While a screenshot is open, the case header collapses so the black viewing area can use the space.
         function syncArchiveLayout() {
             const archiveTabSelected = root.querySelector("#incident-tab-archive").getAttribute("aria-selected") === "true";
-            root.classList.toggle("is-team-archive-viewing", archiveTabSelected && !archiveViewer.hidden && archiveState.entry?.id === "team");
+            root.classList.toggle("is-team-archive-viewing", archiveTabSelected && !archiveViewer.hidden && usesExpandedArchiveLayout(archiveState.entry));
         }
 
         const renderArchiveImage = () => {
             const { entry, index } = archiveState;
             const count = entry.images.length;
             const displayVersion = ++archiveDisplayVersion;
-            archivePrev.disabled = index <= 0;
-            archiveNext.disabled = index >= count - 1;
-            archivePrev.hidden = archiveNext.hidden = count < 2;
-            archiveStage.classList.toggle("is-team-archive-stage", entry.id === "team");
+            const singleScreenshot = hasSingleScreenshot(entry);
+            archivePrev.disabled = index <= 0 || singleScreenshot;
+            archiveNext.disabled = index >= count - 1 || singleScreenshot;
+            archivePrev.hidden = archiveNext.hidden = count < 2 || singleScreenshot;
+            archiveStage.classList.toggle("is-team-archive-stage", usesExpandedArchiveLayout(entry));
             if (!count) {
                 archiveImage.onload = null;
                 archiveVideo.pause();
@@ -496,6 +530,17 @@
             archiveVideo.onloadeddata = null;
             archiveVideo.onended = null;
             archiveVideo.pause();
+            archiveImage.style.transform = "";
+            delete archiveImage.dataset.zoom;
+            archiveStage.style.display = "";
+            archiveStage.style.overflow = "";
+            delete archiveStage.dataset.zoomFitScale;
+            delete archiveStage.dataset.zoomMax;
+            archiveImage.style.width = "";
+            archiveImage.style.height = "";
+            archiveImage.style.margin = "";
+            archiveImage.style.maxWidth = "";
+            archiveImage.style.maxHeight = "";
             archiveVideo.hidden = !item.videoSrc;
             archiveImage.hidden = !!item.videoSrc;
             if (item.videoSrc) {
@@ -520,7 +565,7 @@
                 archiveVideo.load();
             } else {
                 archiveImage.onload = () => {
-                    if (displayVersion !== archiveDisplayVersion || entry.id !== "team") return;
+                    if (displayVersion !== archiveDisplayVersion || !usesTeamArchiveBehavior(entry)) return;
                     archiveImage.classList.remove("is-entering", "is-failure-entering");
                     void archiveImage.offsetWidth;
                     archiveImage.classList.add("is-entering");
@@ -529,8 +574,10 @@
                 archiveImage.src = item.src;
                 archiveImage.alt = item.alt;
             }
-            archiveCaption.textContent = entry.id === "team" ? item.label : `${item.label} — ${index + 1} of ${count}`;
-            if (entry.id === "team" && !item.videoSrc && archiveImage.complete && archiveImage.naturalWidth > 0) {
+            archiveCaption.textContent = entry.id === "relay" && !item.videoSrc
+                ? `${item.label} — CTRL+SCROLL TO ZOOM · SCROLL TO INSPECT`
+                : usesTeamArchiveBehavior(entry) ? item.label : `${item.label} — ${index + 1} of ${count}`;
+            if (usesTeamArchiveBehavior(entry) && !item.videoSrc && archiveImage.complete && archiveImage.naturalWidth > 0) {
                 archiveImage.onload();
             }
         };
@@ -543,18 +590,18 @@
             archivePath.textContent = `A:\\ARCHIVE\\${archiveState.entry.name}`;
             renderArchiveImage();
             archiveViewer.querySelector("[data-archive-back]").focus();
-            if (archiveState.entry.id !== "team") beep(660, 0.08);
+            if (!usesTeamArchiveBehavior(archiveState.entry)) beep(660, 0.08);
         };
         const closeArchiveEntry = () => {
             const id = archiveState.entry && archiveState.entry.id;
-            const wasTeamEntry = archiveState.entry?.id === "team";
+            const usesTeamBehavior = usesTeamArchiveBehavior(archiveState.entry);
             archiveViewer.hidden = true;
             archiveList.hidden = false;
             syncArchiveLayout();
             archivePath.textContent = "A:\\ARCHIVE";
             const entryButton = id && archiveList.querySelector(`[data-archive-open="${id}"]`);
             if (entryButton) entryButton.focus();
-            if (wasTeamEntry) {
+            if (usesTeamBehavior) {
                 stopArchiveSound();
                 archiveVideo.pause();
                 archiveVideo.currentTime = 0;
@@ -562,11 +609,12 @@
         };
         // Debounce rapid navigation so only the last selected screenshot is animated and pinged.
         const stepArchive = delta => {
+            if (hasSingleScreenshot(archiveState.entry)) return;
             const target = archiveState.index + delta;
             if (target < 0 || target >= archiveState.entry.images.length) return;
             archiveState.index = target;
             clearTimeout(archiveSwapTimer);
-            if (archiveState.entry.id === "team") {
+            if (usesTeamArchiveBehavior(archiveState.entry)) {
                 stopArchiveSound();
                 const item = archiveState.entry.images[target];
                 if (item.videoSrc) playArchiveSound(item);
@@ -574,7 +622,7 @@
             archiveSwapTimer = setTimeout(() => {
                 renderArchiveImage();
             }, 140);
-            if (archiveState.entry.id !== "team") beep(760, 0.06);
+            if (!usesTeamArchiveBehavior(archiveState.entry)) beep(760, 0.06);
         };
 
         archiveList.addEventListener("click", event => {
@@ -588,6 +636,55 @@
             if (event.key === "ArrowLeft") stepArchive(-1);
             else if (event.key === "ArrowRight") stepArchive(1);
         });
+        archiveStage.addEventListener("wheel", event => {
+            if (archiveState.entry?.id !== "relay" || archiveImage.hidden || !archiveImage.naturalWidth) return;
+            if (!event.ctrlKey) return;
+            event.preventDefault();
+            const fitScale = Number(archiveStage.dataset.zoomFitScale) || Math.min(
+                archiveStage.clientWidth / archiveImage.naturalWidth,
+                archiveStage.clientHeight / archiveImage.naturalHeight
+            );
+            if (!fitScale) return;
+            const fillScale = Math.max(
+                archiveStage.clientWidth / archiveImage.naturalWidth,
+                archiveStage.clientHeight / archiveImage.naturalHeight
+            );
+            const maxZoom = Number(archiveStage.dataset.zoomMax) || fillScale / fitScale;
+            archiveStage.dataset.zoomFitScale = String(fitScale);
+            archiveStage.dataset.zoomMax = String(maxZoom);
+            const currentZoom = Number(archiveImage.dataset.zoom) || 1;
+            const nextZoom = Math.min(maxZoom, Math.max(1, currentZoom * (event.deltaY < 0 ? 1.15 : 1 / 1.15)));
+            const width = archiveImage.naturalWidth * fitScale * nextZoom;
+            const height = archiveImage.naturalHeight * fitScale * nextZoom;
+            archiveImage.dataset.zoom = String(nextZoom);
+            if (nextZoom === 1) {
+                archiveStage.style.display = "";
+                archiveStage.style.overflow = "";
+                delete archiveStage.dataset.zoomFitScale;
+                delete archiveStage.dataset.zoomMax;
+                archiveImage.style.width = "";
+                archiveImage.style.height = "";
+                archiveImage.style.margin = "";
+                archiveImage.style.maxWidth = "";
+                archiveImage.style.maxHeight = "";
+                archiveImage.classList.remove("is-entering");
+                archiveImage.style.transform = "";
+                archiveStage.scrollTop = 0;
+                archiveStage.scrollLeft = 0;
+                return;
+            }
+            archiveStage.style.display = "block";
+            archiveStage.style.overflow = "auto";
+            archiveImage.style.maxWidth = "none";
+            archiveImage.style.maxHeight = "none";
+            archiveImage.style.width = `${width}px`;
+            archiveImage.style.height = `${height}px`;
+            archiveImage.style.margin = "0 auto";
+            archiveImage.classList.remove("is-entering");
+            archiveImage.style.transform = "";
+            archiveStage.scrollLeft = Math.max(0, (width - archiveStage.clientWidth) / 2);
+            archiveStage.scrollTop = Math.max(0, (height - archiveStage.clientHeight) / 2);
+        }, { passive: false });
     }
 
     window.openChogIncidentReport = openIncidentReport;
