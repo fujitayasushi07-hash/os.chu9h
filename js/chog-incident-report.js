@@ -34,16 +34,27 @@
         contributions: []
     };
     const RECOVERY_MILESTONES = [10, 25, 50, 75, 100];
+    const RECOVERY_MILESTONE_IMAGES = [
+        "assets/images/milestone1.png",
+        "assets/images/milestone2.png",
+        "assets/images/milestone3.png",
+        "assets/images/milestone4png.png",
+        "assets/images/milestonn5.png"
+    ];
 
     function recoveryDashboardMarkup() {
         const { goalUsd, contributedUsd, contributedChog, contributions } = RECOVERY_FUND;
         const progress = Math.min(100, Math.max(0, contributedUsd / goalUsd * 100));
         const nextMilestone = RECOVERY_MILESTONES.find(milestone => milestone > progress);
+        const nextMilestoneIndex = RECOVERY_MILESTONES.indexOf(nextMilestone);
+        const nextMilestoneImage = RECOVERY_MILESTONE_IMAGES[
+            nextMilestoneIndex < 0 ? RECOVERY_MILESTONE_IMAGES.length - 1 : nextMilestoneIndex
+        ];
         const formatUsd = value => `$${value.toFixed(2)}`;
-        const milestoneMarkup = RECOVERY_MILESTONES.map(milestone => `
+        const milestoneMarkup = RECOVERY_MILESTONES.map((milestone, index) => `
             <div class="chog-incident-milestone" data-recovery-milestone="${milestone}">
                 <strong>${milestone}%</strong>
-                <span class="chog-incident-milestone-art" aria-hidden="true"></span>
+                <img class="chog-incident-milestone-art" src="${RECOVERY_MILESTONE_IMAGES[index]}" alt="" aria-hidden="true">
             </div>
         `).join("");
         const contributionRows = contributions.length
@@ -103,31 +114,16 @@
                     </section>
                     <div class="chog-incident-contribute-area">
                         <button type="button" class="chog-incident-contribute" data-recovery-contribute aria-expanded="false">DONATE</button>
-                        <div class="chog-incident-donation-form" data-recovery-form hidden>
-                            <label for="recovery-usd-amount">USD TARGET</label>
-                            <select id="recovery-usd-amount" data-recovery-amount>
-                                <option value="50">$0.50</option>
-                                <option value="100">$1.00</option>
-                                <option value="500">$5.00</option>
-                                <option value="custom">Custom amount</option>
-                            </select>
-                            <input type="number" min="0.50" max="614.00" step="0.01" value="0.50" inputmode="decimal" aria-label="Custom USD donation amount" data-recovery-custom hidden>
-                            <button type="button" data-recovery-prepare>CONNECT WALLET &amp; QUOTE</button>
-                            <p data-recovery-quote role="status" hidden></p>
-                            <button type="button" data-recovery-send hidden disabled>CONFIRM IN WALLET</button>
-                            <button type="button" data-recovery-cancel>CANCEL</button>
-                        </div>
-                        <p data-recovery-message role="status" aria-live="polite" hidden></p>
                         <p class="chog-incident-donation-data-status" data-recovery-data-status role="status" aria-live="polite">Loading verified contributions…</p>
                     </div>
-                    <p class="chog-incident-recovery-disclaimer">This is a community contribution to CHOGWARE and the Recovery Fund. It does not recover the original transaction or guarantee repayment.</p>
+                    <p class="chog-incident-recovery-disclaimer">You're contributing to the CHOGWARE community Recovery Fund. This does not guarantee recovery of the original funds.</p>
                     <section class="chog-incident-recovery-card chog-incident-next-milestone" aria-labelledby="recovery-next-title">
                         <h3 id="recovery-next-title">NEXT MILESTONE</h3>
                         <div class="chog-incident-next-milestone-body">
-                            <span class="chog-incident-next-art" aria-hidden="true"></span>
+                            <img class="chog-incident-next-art" src="${nextMilestoneImage}" alt="" aria-hidden="true" data-recovery-next-art>
                             ${nextMilestone
-                                ? `<p data-recovery-next><strong>${nextMilestone}%</strong> progress<br>${formatUsd(Math.max(0, goalUsd * nextMilestone / 100 - contributedUsd))} USD (est.) to reach</p>`
-                                : '<p data-recovery-next>All milestones reached.</p>'}
+                                ? `<p data-recovery-next><strong>${nextMilestone}%</strong><span>${formatUsd(Math.max(0, goalUsd * nextMilestone / 100 - contributedUsd))} USD (est.) to reach</span></p>`
+                                : '<p data-recovery-next>All recovery milestones reached.</p>'}
                         </div>
                     </section>
                 </aside>
@@ -381,6 +377,54 @@
                     <span>DR. WATSON: WALLET ACTIONS REQUIRE YOUR CONFIRMATION</span>
                 </footer>
 
+                <div class="chog-incident-dialog-layer chog-incident-donation-layer" data-recovery-modal hidden>
+                    <section class="chog-incident-dialog chog-incident-donation-dialog" role="dialog" aria-modal="true" aria-labelledby="recovery-donation-title">
+                        <header class="chog-incident-dialog-titlebar">
+                            <span id="recovery-donation-title">DR. WATSON — SUPPORT THE RECOVERY</span>
+                            <button type="button" aria-label="Close donation dialog" data-recovery-close>×</button>
+                        </header>
+                        <div class="chog-incident-donation-dialog-body">
+                            <section class="chog-incident-panel chog-incident-donation-panel" data-recovery-view hidden>
+                                <div class="chog-incident-donation-form" data-recovery-form>
+                                    <div class="chog-incident-donation-intro">
+                                        <h2>EVERY CHOG COUNTS</h2>
+                                        <p>Help a fellow CHOG bounce back from the 614 financial fumble.</p>
+                                    </div>
+                                    <section class="chog-incident-donation-total" aria-label="Donation amount">
+                                        <span>YOUR DONATION</span>
+                                        <strong data-recovery-display-amount>$0.50</strong>
+                                        <p data-recovery-estimate>Estimated CHOG amount appears after your quote is refreshed.</p>
+                                        <input type="number" min="0.50" max="614.00" step="0.01" value="0.50" inputmode="decimal" aria-label="Custom USD donation amount" data-recovery-custom hidden>
+                                        <p class="chog-incident-donation-quote" data-recovery-quote role="status" hidden></p>
+                                    </section>
+                                    <label class="chog-incident-donation-amount-label">SELECT CONTRIBUTION</label>
+                                    <div class="chog-incident-donation-amounts" role="group" aria-label="Select contribution amount">
+                                        <button type="button" data-recovery-amount-option="50" aria-pressed="true">$0.50</button>
+                                        <button type="button" data-recovery-amount-option="100" aria-pressed="false">$1</button>
+                                        <button type="button" data-recovery-amount-option="500" aria-pressed="false">$5</button>
+                                        <button type="button" data-recovery-amount-option="custom" aria-pressed="false">Custom</button>
+                                    </div>
+                                    <select id="recovery-usd-amount" data-recovery-amount hidden aria-hidden="true" tabindex="-1">
+                                        <option value="50">$0.50</option>
+                                        <option value="100">$1.00</option>
+                                        <option value="500">$5.00</option>
+                                        <option value="custom">Custom amount</option>
+                                    </select>
+                                    <div class="chog-incident-donation-disclaimer">
+                                        <strong>BEFORE YOU PROCEED</strong>
+                                        <p>Sure you want to donate? You're about to give some of your hard-earned CHOG away out of your own free will! Every contribution is voluntary and greatly appreciated.</p>
+                                    </div>
+                                    <button type="button" class="chog-incident-donation-prepare" data-recovery-prepare>CONNECT WALLET &amp; GET QUOTE</button>
+                                    <button type="button" data-recovery-send hidden disabled>CONFIRM IN WALLET</button>
+                                    <p class="chog-incident-donation-message" data-recovery-message role="status" aria-live="polite" hidden></p>
+                                    <button type="button" class="chog-incident-donation-back" data-recovery-cancel>← BACK TO RECOVERY ATTEMPT</button>
+                                    <p class="chog-incident-donation-network">Monad network · Transaction gas requires MON</p>
+                                </div>
+                            </section>
+                        </div>
+                    </section>
+                </div>
+
                 <div class="chog-incident-dialog-layer" data-incident-viewer hidden>
                     <section class="chog-incident-viewer" role="dialog" aria-modal="true" aria-labelledby="chog-incident-viewer-title">
                         <header class="chog-incident-dialog-titlebar">
@@ -436,11 +480,15 @@
         const root = win.querySelector(".chog-incident");
         const status = root.querySelector("[data-incident-status]");
         const recoveryContributeButton = root.querySelector("[data-recovery-contribute]");
-        const recoveryForm = root.querySelector("[data-recovery-form]");
+        const recoveryModal = root.querySelector("[data-recovery-modal]");
+        const recoveryView = root.querySelector("[data-recovery-view]");
         const recoveryMessage = root.querySelector("[data-recovery-message]");
         const recoveryDataStatus = root.querySelector("[data-recovery-data-status]");
         const recoveryAmount = root.querySelector("[data-recovery-amount]");
+        const recoveryAmountOptions = Array.from(root.querySelectorAll("[data-recovery-amount-option]"));
         const recoveryCustomAmount = root.querySelector("[data-recovery-custom]");
+        const recoveryDisplayAmount = root.querySelector("[data-recovery-display-amount]");
+        const recoveryEstimate = root.querySelector("[data-recovery-estimate]");
         const recoveryPrepareButton = root.querySelector("[data-recovery-prepare]");
         const recoverySendButton = root.querySelector("[data-recovery-send]");
         const recoveryQuote = root.querySelector("[data-recovery-quote]");
@@ -523,12 +571,19 @@
                 totalUsdCents < RECOVERY_USD_GOAL_CENTS * BigInt(milestone) / 100n
             );
             const nextMilestoneText = root.querySelector("[data-recovery-next]");
+            const nextMilestoneImage = root.querySelector("[data-recovery-next-art]");
             if (nextMilestone) {
+                const milestoneIndex = RECOVERY_MILESTONES.indexOf(nextMilestone);
                 const targetCents = RECOVERY_USD_GOAL_CENTS * BigInt(nextMilestone) / 100n;
-                nextMilestoneText.textContent =
-                    `${nextMilestone}% progress — ${formatUsdCents(targetCents - totalUsdCents)} USD (est.) to reach`;
+                nextMilestoneImage.src = RECOVERY_MILESTONE_IMAGES[milestoneIndex];
+                const percentage = document.createElement("strong");
+                percentage.textContent = `${nextMilestone}% progress`;
+                const target = document.createElement("span");
+                target.textContent = `${formatUsdCents(targetCents - totalUsdCents)} USD (est.) to reach`;
+                nextMilestoneText.replaceChildren(percentage, target);
             } else {
-                nextMilestoneText.textContent = "All milestones reached.";
+                nextMilestoneImage.src = RECOVERY_MILESTONE_IMAGES[RECOVERY_MILESTONE_IMAGES.length - 1];
+                nextMilestoneText.textContent = "All recovery milestones reached.";
             }
 
             const tbody = root.querySelector("[data-recovery-contributions]");
@@ -693,6 +748,7 @@
                 recoveryQuote.textContent =
                     `${formatUsdCents(usdAmountCents)} target ≈ ${result.intent.amountChog} $CHOG at $${result.intent.quotePriceUsd} per CHOG. Quote from ${result.intent.quoteTimestamp}; expires ${new Date(result.intent.expiresAt).toLocaleTimeString()}. Network gas is separate.`;
                 recoveryQuote.hidden = false;
+                recoveryEstimate.hidden = true;
                 recoverySendButton.textContent = "CONFIRM IN WALLET";
                 recoverySendButton.hidden = false;
                 recoverySendButton.disabled = false;
@@ -761,35 +817,75 @@
             }
         };
 
-        recoveryContributeButton.addEventListener("click", () => {
-            recoveryForm.hidden = !recoveryForm.hidden;
-            recoveryContributeButton.setAttribute("aria-expanded", String(!recoveryForm.hidden));
-            recoveryForm.closest(".chog-incident-recovery-side")
-                .classList.toggle("is-donation-open", !recoveryForm.hidden);
-            if (!recoveryForm.hidden && pendingConfirmation) {
+        const openRecoveryView = () => {
+            recoveryModal.hidden = false;
+            recoveryView.hidden = false;
+            recoveryContributeButton.setAttribute("aria-expanded", "true");
+            if (pendingConfirmation) {
                 recoverySendButton.hidden = false;
                 recoverySendButton.disabled = false;
                 recoverySendButton.textContent = "CHECK CONFIRMATION";
             }
-        });
+            recoveryAmountOptions[0].focus();
+        };
+        const closeRecoveryView = () => {
+            recoveryView.hidden = true;
+            recoveryModal.hidden = true;
+            recoveryContributeButton.setAttribute("aria-expanded", "false");
+            recoveryContributeButton.focus();
+        };
+
+        recoveryContributeButton.addEventListener("click", openRecoveryView);
+        const updateRecoveryAmountDisplay = () => {
+            const amount = recoveryAmount.value === "custom"
+                ? Number(recoveryCustomAmount.value)
+                : Number(recoveryAmount.value) / 100;
+            recoveryDisplayAmount.textContent = Number.isFinite(amount)
+                ? `$${amount.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                })}`
+                : "$0.50";
+        };
         recoveryAmount.addEventListener("change", () => {
             recoveryCustomAmount.hidden = recoveryAmount.value !== "custom";
+            recoveryAmountOptions.forEach(option => {
+                const selected = option.dataset.recoveryAmountOption === recoveryAmount.value;
+                option.setAttribute("aria-pressed", String(selected));
+            });
             recoveryIntent = null;
             recoveryQuote.hidden = true;
+            recoveryEstimate.hidden = recoveryAmount.value === "custom";
             recoverySendButton.hidden = true;
+            updateRecoveryAmountDisplay();
+            if (recoveryAmount.value === "custom") recoveryCustomAmount.focus();
+        });
+        recoveryAmountOptions.forEach(option => {
+            option.addEventListener("click", () => {
+                recoveryAmount.value = option.dataset.recoveryAmountOption;
+                recoveryAmount.dispatchEvent(new Event("change", { bubbles: true }));
+                if (recoveryAmount.value !== "custom") option.focus();
+            });
         });
         recoveryCustomAmount.addEventListener("input", () => {
             recoveryIntent = null;
             recoveryQuote.hidden = true;
+            recoveryEstimate.hidden = recoveryAmount.value === "custom";
             recoverySendButton.hidden = true;
+            updateRecoveryAmountDisplay();
         });
         recoveryPrepareButton.addEventListener("click", prepareRecoveryDonation);
         recoverySendButton.addEventListener("click", sendRecoveryDonation);
-        root.querySelector("[data-recovery-cancel]").addEventListener("click", () => {
-            recoveryForm.hidden = true;
-            recoveryContributeButton.setAttribute("aria-expanded", "false");
-            recoveryForm.closest(".chog-incident-recovery-side")
-                .classList.remove("is-donation-open");
+        root.querySelector("[data-recovery-cancel]").addEventListener("click", closeRecoveryView);
+        root.querySelector("[data-recovery-close]").addEventListener("click", closeRecoveryView);
+        recoveryModal.addEventListener("click", event => {
+            if (event.target === recoveryModal) closeRecoveryView();
+        });
+        root.addEventListener("keydown", event => {
+            if (event.key === "Escape" && !recoveryModal.hidden) {
+                event.preventDefault();
+                closeRecoveryView();
+            }
         });
         refreshRecoverySummary();
         const tabs = Array.from(root.querySelectorAll("[data-incident-tab]"));
@@ -803,6 +899,9 @@
             panels.forEach(panel => {
                 panel.hidden = panel.dataset.incidentPanel !== tab.dataset.incidentTab;
             });
+            recoveryView.hidden = true;
+            recoveryModal.hidden = true;
+            recoveryContributeButton.setAttribute("aria-expanded", "false");
             root.classList.toggle("is-recovery-viewing", tab.dataset.incidentTab === "recovery");
             const section = SECTIONS.find(item => item.id === tab.dataset.incidentTab);
             syncArchiveLayout();

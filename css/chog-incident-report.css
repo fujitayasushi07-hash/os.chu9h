@@ -256,8 +256,29 @@
     display: none;
 }
 
+.chog-incident.is-donation-viewing .chog-incident-tabs {
+    display: none;
+}
+
 #incident-panel-recovery {
     padding: 8px;
+}
+
+.chog-incident-donation-panel {
+    display: flex;
+    flex-direction: column;
+    padding: 10px 12px;
+    overflow-y: auto;
+    background: #c0c0c0;
+}
+
+.chog-incident-donation-panel[hidden] {
+    display: none;
+}
+
+.chog-incident-donation-form {
+    width: min(680px, 100%);
+    margin: auto;
 }
 
 .chog-incident-recovery-intro {
@@ -289,15 +310,11 @@
 }
 
 .chog-incident-recovery-main {
-    grid-template-rows: minmax(102px, 1.2fr) minmax(68px, 0.8fr) minmax(64px, 0.8fr);
+    grid-template-rows: minmax(102px, 1.2fr) minmax(108px, 1fr) minmax(64px, 0.8fr);
 }
 
 .chog-incident-recovery-side {
-    grid-template-rows: minmax(90px, 1.1fr) auto auto minmax(67px, 0.9fr);
-}
-
-.chog-incident-recovery-side.is-donation-open {
-    grid-template-rows: minmax(64px, 0.8fr) auto auto minmax(60px, 0.8fr);
+    grid-template-rows: minmax(90px, 1.1fr) auto auto minmax(96px, 0.9fr);
 }
 
 .chog-incident-recovery-card {
@@ -417,10 +434,16 @@
 }
 
 .chog-incident-milestone-art {
-    width: 23px;
-    height: 23px;
-    border: 1px dashed #808080;
-    background: #fff;
+    display: block;
+    width: 52px;
+    height: 52px;
+    flex: 0 0 52px;
+    object-fit: contain;
+}
+
+.chog-incident-milestone:not(.is-reached) .chog-incident-milestone-art {
+    filter: grayscale(1);
+    opacity: 0.35;
 }
 
 .chog-incident-contributions-table-wrap {
@@ -589,7 +612,7 @@
     display: flex;
     height: calc(100% - 18px);
     align-items: center;
-    gap: 8px;
+    gap: 7px;
     margin: 4px;
     padding: 4px;
     border: 2px solid;
@@ -598,16 +621,25 @@
 }
 
 .chog-incident-next-art {
-    width: 30px;
-    height: 30px;
-    flex: 0 0 30px;
-    border: 1px dashed #808080;
-    background: #fff;
+    display: block;
+    width: 56px;
+    height: 56px;
+    flex: 0 0 56px;
+    object-fit: contain;
 }
 
 .chog-incident-next-milestone-body p {
+    display: grid;
+    min-width: 0;
+    gap: 3px;
     margin: 0;
-    font-size: 10px;
+    font-size: 11px;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+}
+
+.chog-incident-next-milestone-body p strong {
+    color: #000080;
 }
 
 .chog-incident-link-button {
@@ -664,6 +696,206 @@
 
 .chog-incident-dialog-layer[hidden] {
     display: none;
+}
+
+.chog-incident-donation-layer {
+    z-index: 8;
+    background: rgb(0 0 0 / 42%);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+}
+
+.chog-incident-dialog.chog-incident-donation-dialog {
+    display: flex;
+    width: min(600px, 100%);
+    max-height: 100%;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.chog-incident-donation-dialog > .chog-incident-dialog-titlebar {
+    flex: 0 0 auto;
+}
+
+.chog-incident-donation-dialog-body {
+    display: flex;
+    min-height: 0;
+    flex: 1 1 auto;
+    overflow: hidden;
+}
+
+.chog-incident-donation-dialog .chog-incident-donation-panel {
+    width: 100%;
+    min-height: 0;
+    flex: 1 1 auto;
+}
+
+.chog-incident-donation-form {
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+}
+
+.chog-incident-donation-intro h2 {
+    margin: 0 0 4px;
+    color: #000080;
+    font-size: 18px;
+    line-height: 1.2;
+}
+
+.chog-incident-donation-intro p {
+    margin: 0;
+    font-size: 13px;
+}
+
+.chog-incident-donation-total {
+    display: grid;
+    grid-template-rows: auto auto 34px auto;
+    gap: 4px;
+    padding: 8px 10px;
+    border: 1px solid #808080;
+    background: #fff;
+}
+
+.chog-incident-donation-total > [data-recovery-estimate],
+.chog-incident-donation-total > [data-recovery-custom] {
+    grid-column: 1;
+    grid-row: 3;
+}
+
+.chog-incident-donation-total > [data-recovery-quote] {
+    grid-row: 4;
+}
+
+.chog-incident-donation-total > span {
+    color: #555;
+    font-size: 11px;
+}
+
+.chog-incident-donation-total > strong {
+    font-size: 28px;
+    line-height: 1.1;
+}
+
+.chog-incident-donation-form .chog-incident-donation-total p {
+    margin: 0;
+    color: #444;
+    font-size: 13px;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+.chog-incident-donation-amount-label {
+    margin-bottom: -6px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.chog-incident-donation-amounts {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 5px;
+}
+
+.chog-incident-donation-form .chog-incident-donation-amounts button {
+    height: 38px;
+    min-height: 38px;
+    max-height: 38px;
+    padding: 5px 3px;
+    border: 2px solid;
+    border-color: #fff #404040 #404040 #fff;
+    background: #d4d0c8;
+    font-size: 13px;
+}
+
+.chog-incident-donation-form .chog-incident-donation-amounts button[aria-pressed="true"] {
+    border-color: #404040 #fff #fff #404040;
+    background: #e6e6e6;
+    box-shadow: inset 1px 1px #808080;
+}
+
+.chog-incident-donation-form input[data-recovery-custom]:not([hidden]) {
+    min-height: 34px;
+    padding: 5px 7px;
+    border: 2px solid;
+    border-color: #808080 #fff #fff #808080;
+    background: #fff;
+    color: #111;
+    font: 13px Tahoma, sans-serif;
+}
+
+.chog-incident-donation-disclaimer {
+    padding: 7px 9px;
+    background: #e6e6e6;
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.chog-incident-donation-disclaimer strong {
+    display: block;
+    margin-bottom: 3px;
+    font-size: 13px;
+}
+
+.chog-incident-donation-form .chog-incident-donation-disclaimer p {
+    margin: 0;
+    color: #333;
+    font-size: 13px;
+}
+
+.chog-incident-donation-form button {
+    min-height: 36px;
+    padding: 6px 8px;
+    border: 2px solid;
+    border-color: #fff #404040 #404040 #fff;
+    background: #d4d0c8;
+    color: #111;
+    font: bold 12px "MS Sans Serif", Tahoma, sans-serif;
+    cursor: pointer;
+}
+
+.chog-incident-donation-form button:disabled {
+    color: #777;
+    cursor: default;
+}
+
+.chog-incident-donation-form .chog-incident-donation-prepare {
+    min-height: 42px;
+    border-color: #8bff9c #00551a #00551a #8bff9c;
+    background: #367f20;
+    color: #fff;
+    font-size: 15px;
+    text-shadow: 1px 1px #004014;
+}
+
+.chog-incident-donation-form .chog-incident-donation-prepare:active {
+    border-color: #00551a #8bff9c #8bff9c #00551a;
+}
+
+.chog-incident-donation-form .chog-incident-donation-back {
+    min-height: 36px;
+    background: #d4d0c8;
+}
+
+.chog-incident-donation-form .chog-incident-donation-network {
+    margin: 4px 0 0;
+    color: #444;
+    font-size: 11px;
+    line-height: 1.3;
+}
+
+.chog-incident-donation-form .chog-incident-donation-message {
+    margin: -4px 0 0;
+    color: #000080;
+    font-size: 12px;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+.chog-incident-donation-form .chog-incident-donation-message.is-error {
+    color: #800000;
 }
 
 .chog-incident-dialog {
@@ -1202,7 +1434,7 @@
     }
 
     .chog-incident-milestones {
-        min-height: 76px;
+        min-height: 112px;
     }
 
     .chog-incident-contributions {
@@ -1214,7 +1446,7 @@
     }
 
     .chog-incident-next-milestone {
-        min-height: 76px;
+        min-height: 96px;
     }
 
     .chog-incident-facts b {
@@ -1319,5 +1551,83 @@
 
     .chog-incident-panel {
         padding: 8px;
+    }
+}
+
+@media (max-height: 520px) {
+    .chog-incident-donation-panel {
+        padding: 6px 10px;
+    }
+
+    .chog-incident-donation-form {
+        gap: 5px;
+    }
+
+    .chog-incident-donation-intro h2 {
+        margin-bottom: 3px;
+        font-size: 16px;
+    }
+
+    .chog-incident-donation-intro p {
+        font-size: 12px;
+    }
+
+    .chog-incident-donation-total {
+        gap: 2px;
+        padding: 7px 9px;
+    }
+
+    .chog-incident-donation-total > strong {
+        font-size: 24px;
+    }
+
+    .chog-incident-donation-form .chog-incident-donation-amounts button {
+        height: 34px;
+        min-height: 34px;
+        max-height: 34px;
+    }
+
+    .chog-incident-donation-disclaimer {
+        padding: 6px 8px;
+        font-size: 12px;
+    }
+
+    .chog-incident-donation-disclaimer strong {
+        margin-bottom: 2px;
+        font-size: 12px;
+    }
+
+    .chog-incident-donation-form .chog-incident-donation-disclaimer p {
+        font-size: 12px;
+    }
+
+    .chog-incident-donation-form .chog-incident-donation-prepare {
+        min-height: 40px;
+        font-size: 13px;
+    }
+
+    .chog-incident-donation-form .chog-incident-donation-back {
+        min-height: 34px;
+    }
+
+    .chog-incident-donation-form .chog-incident-donation-network {
+        font-size: 10px;
+    }
+}
+
+@media (max-width: 420px) {
+    .chog-incident-donation-panel {
+        padding-right: 7px;
+        padding-left: 7px;
+    }
+
+    .chog-incident-donation-amounts {
+        gap: 3px;
+    }
+
+    .chog-incident-donation-form .chog-incident-donation-amounts button {
+        padding-right: 1px;
+        padding-left: 1px;
+        font-size: 11px;
     }
 }
