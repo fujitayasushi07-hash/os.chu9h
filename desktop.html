@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -53,6 +53,20 @@
             cursor: default;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
+        }
+
+        .icon[data-app="chog-pfp-maker"],
+        .icon[data-app="chog-incident-report"] {
+            position: absolute;
+            top: 12%;
+        }
+
+        .icon[data-app="chog-pfp-maker"] {
+            left: 64%;
+        }
+
+        .icon[data-app="chog-incident-report"] {
+            left: 73%;
         }
 
             .icon img {
@@ -1429,6 +1443,14 @@
     .icon div {
         font-size: 11px;
     }
+
+    .icon[data-app="chog-pfp-maker"] {
+        left: 52%;
+    }
+
+    .icon[data-app="chog-incident-report"] {
+        left: 75%;
+    }
     
     /* Windows - keep windowed style, just constrain size */
     .window {
@@ -1566,6 +1588,16 @@
     }
 }
 
+@media (min-width: 769px) and (max-width: 1024px) {
+    .icon[data-app="chog-pfp-maker"] {
+        left: 52%;
+    }
+
+    .icon[data-app="chog-incident-report"] {
+        left: 75%;
+    }
+}
+
 @media (max-width: 480px) {
     /* Even smaller screens */
     #desktop {
@@ -1584,6 +1616,14 @@
     
     .icon div {
         font-size: 10px;
+    }
+
+    .icon[data-app="chog-pfp-maker"] {
+        left: 44%;
+    }
+
+    .icon[data-app="chog-incident-report"] {
+        left: 74%;
     }
     
     /* Music bunny - still visible on small screens */
@@ -1881,9 +1921,9 @@
                         Music Player
                     </div>
 
-                    <div class="start-item" id="open-paint">
-                        <img src="assets/images/paint.png" alt="">
-                        MS Paint
+                    <div class="start-item" id="open-opensea">
+                        <img src="assets/images/OpenSea.png" alt="">
+                        CHOG on OpenSea
                     </div>
 
                     <div class="start-item" id="open-chog-finance">
@@ -1956,6 +1996,7 @@ let sourceNode = null;
 let masterGain = null;
 let masterVolume = 1;
 let masterVolumeMuted = false;
+const motionClipPlayers = new Set();
 let visualizerRunning = false;
 let visualizerRAF = null;
 let displayDataArray = null;
@@ -2127,6 +2168,14 @@ document
         startButton.classList.remove("active");
     });
 
+document
+    .getElementById("open-opensea")
+    ?.addEventListener("click", () => {
+        window.open("https://opensea.io/collection/chog-genesis", "_blank", "noopener,noreferrer");
+        startMenu.style.display = "none";
+        startButton.classList.remove("active");
+    });
+
     /* ===== START MENU: SOCIAL LINKS ===== */
 
 // Twitter / X
@@ -2191,7 +2240,7 @@ document.getElementById("start-logoff")?.addEventListener("click", () => {
 
 // Documents
 document.getElementById("start-documents")?.addEventListener("click", () => {
-    openWindow(
+    const documentsWindow = openWindow(
         "Documents",
         `<div class="explorer-window">
             <div class="menu-bar">
@@ -2212,12 +2261,22 @@ document.getElementById("start-documents")?.addEventListener("click", () => {
                     <div class="side-divider"></div>
                     <div class="side-text">Your personal documents.</div>
                 </div>
-                <div class="explorer-content">This folder is currently empty.</div>
+                <div class="explorer-content">
+                    <div class="explorer-item" data-documents-portfolio title="Internet shortcut">
+                        <img src="assets/images/user_card.ico" alt="">
+                        <div>My CV &amp; Portfolio</div>
+                        <small>Internet shortcut</small>
+                    </div>
+                </div>
             </div>
-            <div class="status-bar">0 object(s)</div>
+            <div class="status-bar">1 object(s)</div>
         </div>`,
         "assets/images/documents.png"
     );
+    const portfolioShortcut = documentsWindow.querySelector("[data-documents-portfolio]");
+    portfolioShortcut.ondblclick = () => {
+        window.open("https://fujitayasushi.vercel.app/", "_blank", "noopener,noreferrer");
+    };
     
     startMenu.style.display = "none";
     startButton.classList.remove("active");
@@ -2249,6 +2308,13 @@ function updateTrayVolumeIcon() {
     trayVolume.src = masterVolumeMuted || masterVolume === 0
         ? "assets/images/loudspeaker_muted-0.png"
         : "assets/images/icon-volume.png";
+}
+
+function applyMasterVolumeToMotionClips() {
+    motionClipPlayers.forEach(video => {
+        video.volume = masterVolume;
+        video.muted = masterVolumeMuted;
+    });
 }
 
 document.getElementById("tray-volume")?.addEventListener("click", () => {
@@ -2286,11 +2352,13 @@ volumeSlider.oninput = () => {
     masterVolume = Number(volumeSlider.value) / 100;
     updateVolumeKnob();
     if (masterGain) masterGain.gain.value = masterVolumeMuted ? 0 : masterVolume;
+    applyMasterVolumeToMotionClips();
     updateTrayVolumeIcon();
 };
 volumeMute.onchange = () => {
     masterVolumeMuted = volumeMute.checked;
     if (masterGain) masterGain.gain.value = masterVolumeMuted ? 0 : masterVolume;
+    applyMasterVolumeToMotionClips();
     updateTrayVolumeIcon();
 };
 
@@ -5435,6 +5503,28 @@ function openImageViewer(filename, src) {
 /* ===== GAE-ARTS CLIP ART GALLERY ===== */
 function openClipArtGallery() {
     const galleryId = "gallery-" + Date.now();
+    const soundboardItems = [
+        ["ARAY KO BENJA.ogg", "ARAY KO BENJA"],
+        ["ARKY KO VENTY.ogg", "ARKY KO VENTY"],
+        ["Benja Benka i love you.ogg", "Benja Benka i love you"],
+        ["BENJA uWu.ogg", "BENJA uWu"],
+        ["Benja.ogg", "Benja"],
+        ["Chog World Order.ogg", "Chog World Order"],
+        ["Chog.ogg", "Chog"],
+        ["Midari Singing 2.ogg", "Midari Singing 2"],
+        ["Midari Singing.ogg", "Midari Singing"],
+        ["princess.ogg", "princess"],
+        ["RUBY CHAN CAT.ogg", "RUBY CHAN CAT"],
+        ["tissue meow.ogg", "tissue meow"],
+        ["TISSUE RUBY CHAN.ogg", "TISSUE RUBY CHAN"],
+        ["Tissue Yamete.ogg", "Tissue Yamete"],
+        ["uWu.ogg", "uWu"],
+        ["YAMETE Toad.ogg", "YAMETE Toad"],
+    ];
+    const motionClipItems = [
+        ["assets/videos/CHOGclip1.mp4", "CHOG Clip 1"],
+        ["assets/videos/CHOGclip2.mp4", "CHOG Clip 2"],
+    ];
     
     // All images from chog-library folder
     const clipArtImages = [
@@ -5587,6 +5677,158 @@ function openClipArtGallery() {
     ];
     const win = openWindow("Insert ClipArt", `
         <div class="clipart-gallery" data-gallery-id="${galleryId}" style="display:flex;flex-direction:column;height:100%;background:#c0c0c0;">
+            <style>
+                .clipart-sound-grid {
+                    display: grid;
+                    grid-template-columns: repeat(3, minmax(0, 1fr));
+                    gap: 8px;
+                    align-content: start;
+                    background: #fff;
+                }
+                .clipart-sound-card {
+                    position: relative;
+                    display: flex;
+                    min-width: 0;
+                    min-height: 56px;
+                    align-items: center;
+                    gap: 9px;
+                    padding: 6px 8px;
+                    border: 2px outset #dfdfdf;
+                    border-radius: 2px;
+                    background: #c0c0c0;
+                    color: #000;
+                    text-align: left;
+                    transition: background-color 100ms ease;
+                }
+                .clipart-sound-card:hover {
+                    background: #d4d0c8;
+                }
+                .clipart-sound-art {
+                    position: relative;
+                    width: 40px;
+                    height: 40px;
+                    flex: 0 0 40px;
+                }
+                .clipart-sound-thumb {
+                    display: block;
+                    width: 40px;
+                    height: 40px;
+                    object-fit: cover;
+                    border: 1px inset #808080;
+                    background: #fff;
+                }
+                .clipart-sound-name {
+                    min-width: 0;
+                    flex: 1;
+                    overflow: hidden;
+                    font-size: 11px;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                }
+                .clipart-sound-play {
+                    all: unset;
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    display: block;
+                    width: 32px;
+                    height: 32px;
+                    padding: 0;
+                    border: 0;
+                    border-radius: 50%;
+                    background: transparent;
+                    cursor: pointer;
+                    opacity: 0;
+                    outline: none;
+                    -webkit-tap-highlight-color: transparent;
+                    transform: translate(-50%, -50%);
+                    transition: opacity 100ms ease;
+                }
+                .clipart-sound-play img {
+                    display: block;
+                    width: 100%;
+                    height: 100%;
+                    object-fit: contain;
+                }
+                .clipart-sound-card:hover .clipart-sound-play,
+                .clipart-sound-play:focus-visible {
+                    opacity: 1;
+                }
+                .clipart-sound-card .clipart-sound-play:active,
+                .clipart-sound-card .clipart-sound-play:focus,
+                .clipart-sound-card .clipart-sound-play:focus-visible {
+                    border: 0;
+                    border-radius: 50%;
+                    outline: none;
+                    background: transparent;
+                    box-shadow: none;
+                }
+                .clipart-motion-grid {
+                    display: grid;
+                    grid-template-columns: repeat(3, minmax(0, 1fr));
+                    gap: 8px;
+                    align-content: start;
+                }
+                .clipart-motion-card {
+                    position: relative;
+                    min-width: 0;
+                    padding: 6px;
+                    border: 2px outset #dfdfdf;
+                    background: #c0c0c0;
+                    cursor: pointer;
+                }
+                .clipart-motion-card:hover {
+                    background: #d4d0c8;
+                }
+                .clipart-motion-thumb {
+                    display: block;
+                    width: 100%;
+                    aspect-ratio: 16 / 9;
+                    border: 1px inset #808080;
+                    background: #000;
+                    object-fit: cover;
+                }
+                .clipart-motion-label {
+                    display: block;
+                    overflow: hidden;
+                    margin-top: 5px;
+                    font-size: 11px;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                }
+                .clipart-motion-play {
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    display: flex;
+                    width: 32px;
+                    height: 32px;
+                    align-items: center;
+                    justify-content: center;
+                    border: 2px outset #dfdfdf;
+                    background: #c0c0c0;
+                    font-size: 16px;
+                    transform: translate(-50%, -50%);
+                }
+                @media (max-width: 480px) {
+                    .clipart-sound-grid {
+                        gap: 6px;
+                    }
+                    .clipart-sound-card {
+                        gap: 6px;
+                        padding-left: 6px;
+                    }
+                    .clipart-sound-art {
+                        width: 32px;
+                        height: 32px;
+                        flex-basis: 32px;
+                    }
+                    .clipart-sound-thumb {
+                        width: 32px;
+                        height: 32px;
+                    }
+                }
+            </style>
             <!-- Toolbar -->
             <div style="background:#c0c0c0;padding:4px 8px;display:flex;align-items:center;gap:4px;border-bottom:1px solid #808080;">
                 <img src="assets/images/go-previous.png" style="width:16px;height:16px;image-rendering:pixelated;opacity:0.6;cursor:not-allowed;" title="Back">
@@ -5610,29 +5852,65 @@ function openClipArtGallery() {
             
             <!-- Tabs -->
             <div style="padding:6px 10px 4px 10px;background:#c0c0c0;display:flex;align-items:center;gap:0;">
-                <div style="background:#fff;border:1px solid #808080;border-bottom:none;padding:6px 14px;font-size:11px;display:flex;align-items:center;gap:6px;">
+                <div data-gallery-tab="pictures" style="background:#fff;border:1px solid #808080;border-bottom:none;padding:6px 14px;font-size:11px;display:flex;align-items:center;gap:6px;cursor:pointer;">
                     <img src="assets/images/pcx_alt.png" style="width:16px;height:16px;image-rendering:pixelated;"> Pictures
                 </div>
-                <div style="background:#c0c0c0;border:1px solid #808080;border-bottom:none;border-left:none;padding:6px 14px;font-size:11px;display:flex;align-items:center;gap:6px;cursor:pointer;">
+                <div data-gallery-tab="sounds" style="background:#c0c0c0;border:1px solid #808080;border-bottom:none;border-left:none;padding:6px 14px;font-size:11px;display:flex;align-items:center;gap:6px;cursor:pointer;">
                     <img src="assets/images/folder-music-open.png" style="width:16px;height:16px;image-rendering:pixelated;"> Sounds
                 </div>
-                <div style="background:#c0c0c0;border:1px solid #808080;border-bottom:none;border-left:none;padding:6px 14px;font-size:11px;display:flex;align-items:center;gap:6px;cursor:pointer;">
+                <div data-gallery-tab="motion" style="background:#c0c0c0;border:1px solid #808080;border-bottom:none;border-left:none;padding:6px 14px;font-size:11px;display:flex;align-items:center;gap:6px;cursor:pointer;">
                     <img src="assets/images/camera_2.png" style="width:16px;height:16px;image-rendering:pixelated;"> Motion Clips
                 </div>
             </div>
             
-            <!-- Category Label -->
-            <div style="padding:4px 8px;background:#fff;font-size:11px;border-bottom:1px solid #c0c0c0;">
-                Clips 1 - ${clipArtImages.length} in Chog Library
+            <div data-gallery-panel="pictures" style="display:flex;flex:1;min-height:0;flex-direction:column;">
+                <!-- Category Label -->
+                <div style="padding:4px 8px;background:#fff;font-size:11px;border-bottom:1px solid #c0c0c0;">
+                    Clips 1 - ${clipArtImages.length} in Chog Library
+                </div>
+
+                <!-- Clip Art Grid -->
+                <div class="clipart-grid" style="flex:1;overflow:auto;background:#fff;padding:8px;display:grid;grid-template-columns:repeat(auto-fill, 90px);gap:8px;align-content:start;">
+                    ${clipArtImages.map((img, i) => `
+                        <div class="clipart-item" data-src="assets/chog-library/${img}" style="width:85px;height:85px;border:1px solid #c0c0c0;display:flex;align-items:center;justify-content:center;cursor:pointer;background:#fff;">
+                            <img src="assets/chog-library/${img}" style="max-width:80px;max-height:80px;object-fit:contain;">
+                        </div>
+                    `).join('')}
+                </div>
             </div>
-            
-            <!-- Clip Art Grid -->
-            <div class="clipart-grid" style="flex:1;overflow:auto;background:#fff;padding:8px;display:grid;grid-template-columns:repeat(auto-fill, 90px);gap:8px;align-content:start;">
-                ${clipArtImages.map((img, i) => `
-                    <div class="clipart-item" data-src="assets/chog-library/${img}" style="width:85px;height:85px;border:1px solid #c0c0c0;display:flex;align-items:center;justify-content:center;cursor:pointer;background:#fff;">
-                        <img src="assets/chog-library/${img}" style="max-width:80px;max-height:80px;object-fit:contain;">
-                    </div>
-                `).join('')}
+
+            <div data-gallery-panel="sounds" style="display:none;flex:1;min-height:0;flex-direction:column;">
+                <div style="padding:4px 8px;background:#fff;font-size:11px;border-bottom:1px solid #c0c0c0;">
+                    Sounds 1 - ${soundboardItems.length} in Soundboard
+                </div>
+                <div class="clipart-sound-grid" style="flex:1;overflow:auto;padding:10px;">
+                    ${soundboardItems.map(([sound, label], i) => `
+                        <div class="clipart-sound-card">
+                            <div class="clipart-sound-art">
+                                <img class="clipart-sound-thumb" src="assets/soundboard/soundboard%20icon/soundboardimage${i + 1}.webp" alt="${label}">
+                            </div>
+                            <span class="clipart-sound-name">${label}</span>
+                            <button class="clipart-sound-play" type="button" data-sound-src="assets/soundboard/${encodeURI(sound)}" aria-label="Play ${label}" title="Play ${label}">
+                                <img src="assets/soundboard/soundboard%20icon/soundboardplay.png" alt="">
+                            </button>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+
+            <div data-gallery-panel="motion" style="display:none;flex:1;min-height:0;flex-direction:column;">
+                <div style="padding:4px 8px;background:#fff;font-size:11px;border-bottom:1px solid #c0c0c0;">
+                    Motion Clips 1 - ${motionClipItems.length} in Chog Library
+                </div>
+                <div class="clipart-motion-grid" style="flex:1;overflow:auto;background:#fff;padding:10px;">
+                    ${motionClipItems.map(([src, label], i) => `
+                        <div class="clipart-motion-card" data-motion-src="${src}" data-motion-title="Motion Clip ${i + 1}" tabindex="0" role="button" aria-label="Play ${label}">
+                            <video class="clipart-motion-thumb" src="${src}" muted preload="metadata" playsinline></video>
+                            <span class="clipart-motion-label">${label}</span>
+                            <span class="clipart-motion-play" aria-hidden="true">&#9654;</span>
+                        </div>
+                    `).join('')}
+                </div>
             </div>
         </div>
     `, "assets/images/gae-arts-gallery.png");
@@ -5656,6 +5934,71 @@ function openClipArtGallery() {
     
     // Add click handlers for clip art items
     const galleryEl = win.querySelector(`[data-gallery-id="${galleryId}"]`);
+    const galleryTabs = galleryEl.querySelectorAll("[data-gallery-tab]");
+    galleryTabs.forEach(tab => {
+        tab.addEventListener("click", () => {
+            const selectedTab = tab.dataset.galleryTab;
+            galleryTabs.forEach(galleryTab => {
+                const isSelected = galleryTab === tab;
+                galleryTab.style.background = isSelected ? "#fff" : "#c0c0c0";
+                galleryTab.style.borderBottomColor = isSelected ? "#fff" : "#808080";
+            });
+            galleryEl.querySelectorAll("[data-gallery-panel]").forEach(panel => {
+                panel.style.display = panel.dataset.galleryPanel === selectedTab ? "flex" : "none";
+            });
+        });
+    });
+
+    galleryEl.querySelectorAll(".clipart-sound-play").forEach(button => {
+        button.addEventListener("click", () => {
+            if (window.clipArtSoundAudio) {
+                window.clipArtSoundAudio.pause();
+                window.clipArtSoundAudio.currentTime = 0;
+            }
+
+            const audio = new Audio(button.dataset.soundSrc);
+            window.clipArtSoundAudio = audio;
+            audio.play().catch(error => {
+                if (error.name !== "AbortError") {
+                    console.error("Unable to play ClipArt sound:", error);
+                }
+            });
+        });
+    });
+
+    const openMotionClip = card => {
+        const title = card.dataset.motionTitle;
+        if (openWindows[title]) {
+            openWindow(title, "", "assets/images/camera_2.png");
+            return;
+        }
+
+        const videoWindow = openWindow(title, `
+            <div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;min-height:0;background:#000;">
+                <video data-motion-player src="${card.dataset.motionSrc}" controls preload="metadata" playsinline style="display:block;width:100%;height:100%;max-height:70vh;object-fit:contain;background:#000;"></video>
+            </div>
+        `, "assets/images/camera_2.png");
+        const video = videoWindow.querySelector("[data-motion-player]");
+        motionClipPlayers.add(video);
+        applyMasterVolumeToMotionClips();
+        videoWindow.querySelector('[aria-label="Close"]').addEventListener("click", () => {
+            video.pause();
+            video.removeAttribute("src");
+            video.load();
+            motionClipPlayers.delete(video);
+        }, true);
+    };
+
+    galleryEl.querySelectorAll(".clipart-motion-card").forEach(card => {
+        card.addEventListener("click", () => openMotionClip(card));
+        card.addEventListener("keydown", event => {
+            if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                openMotionClip(card);
+            }
+        });
+    });
+
     galleryEl.querySelectorAll(".clipart-item").forEach(item => {
         let lastTap = 0;
         
