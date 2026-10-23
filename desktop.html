@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -56,17 +56,23 @@
         }
 
         .icon[data-app="chog-pfp-maker"],
-        .icon[data-app="chog-incident-report"] {
+        .icon[data-app="chog-incident-report"],
+        .icon[data-app="chogbro614"] {
             position: absolute;
             top: 12%;
         }
 
         .icon[data-app="chog-pfp-maker"] {
-            left: 64%;
+            right: calc(370px + 96px + 24px);
         }
 
         .icon[data-app="chog-incident-report"] {
-            left: 73%;
+            right: 380px;
+        }
+
+        .icon[data-app="chogbro614"] {
+            right: 380px;
+            top: calc(12% + 94px);
         }
 
             .icon img {
@@ -1307,7 +1313,7 @@
     position: fixed;
     bottom: 77px;
     right: 50px;
-    width: 400px;
+    width: 340px;
     z-index: 9998;
 }
 
@@ -1445,11 +1451,16 @@
     }
 
     .icon[data-app="chog-pfp-maker"] {
-        left: 52%;
+        right: calc(10px + 72px + 16px);
     }
 
     .icon[data-app="chog-incident-report"] {
-        left: 75%;
+        right: 10px;
+    }
+
+    .icon[data-app="chogbro614"] {
+        right: 10px;
+        top: calc(12% + 75px);
     }
     
     /* Windows - keep windowed style, just constrain size */
@@ -1461,8 +1472,8 @@
     
     /* Fake virus video window - smaller on mobile */
     #video-window {
-        width: 75vw !important;
-        max-width: 260px !important;
+        width: 65vw !important;
+        max-width: 220px !important;
         right: auto !important;
         left: 57% !important;
         top: 82% !important;
@@ -1588,16 +1599,6 @@
     }
 }
 
-@media (min-width: 769px) and (max-width: 1024px) {
-    .icon[data-app="chog-pfp-maker"] {
-        left: 52%;
-    }
-
-    .icon[data-app="chog-incident-report"] {
-        left: 75%;
-    }
-}
-
 @media (max-width: 480px) {
     /* Even smaller screens */
     #desktop {
@@ -1619,11 +1620,16 @@
     }
 
     .icon[data-app="chog-pfp-maker"] {
-        left: 44%;
+        right: calc(5px + 64px + 12px);
     }
 
     .icon[data-app="chog-incident-report"] {
-        left: 74%;
+        right: 5px;
+    }
+
+    .icon[data-app="chogbro614"] {
+        right: 5px;
+        top: calc(12% + 66px);
     }
     
     /* Music bunny - still visible on small screens */
@@ -1791,23 +1797,28 @@
 </div>
 
         <div class="icon" data-app="clipart">
-    <img src="assets/images/gae-arts-gallery.png" style="width:64px;height:64px;">
+    <img src="assets/images/gae-arts-gallery.png" style="width:60px;height:60px;">
     <div>gae-arts.app</div>
 </div>
 
         <div class="icon" data-app="chog-messenger">
             <img src="assets/images/icon-chog-message.png">
-            <div>CHOG Messenger</div>
+            <div>CHOGSpace</div>
         </div>
 
         <div class="icon" data-app="chog-pfp-maker">
             <img src="assets/images/icon-pfp-maker.png" alt="">
-            <div>CHOGWARE PFP Maker</div>
+            <div>CHOGMii</div>
         </div>
 
         <div class="icon" data-app="chog-incident-report">
             <img src="assets/images/doctor_watson.ico" alt="">
             <div>614_LOST.exe</div>
+        </div>
+
+        <div class="icon" data-app="chogbro614">
+            <img src="assets/images/chogbro614.png" alt="">
+            <div>CHOGBRO.EXE</div>
         </div>
 
     </div>
@@ -1918,22 +1929,22 @@
 
                     <div class="start-item" data-app="music-player">
                         <img src="assets/images/music.png" alt="">
-                        Music Player
-                    </div>
-
-                    <div class="start-item" id="open-opensea">
-                        <img src="assets/images/OpenSea.png" alt="">
-                        CHOG on OpenSea
+                        CHOGPLAYER 2000
                     </div>
 
                     <div class="start-item" id="open-chog-finance">
                         <img src="assets/images/documents.png" alt="">
-                        CHOG Finance
+                        CHOG Terminal
                     </div>
 
                     <div class="start-item" id="open-chog-pfp-maker">
                         <img src="assets/images/icon-pfp-maker.png" alt="">
-                        CHOGWARE PFP Maker
+                        CHOGMii
+                    </div>
+
+                    <div class="start-item" id="open-opensea">
+                        <img src="assets/images/OpenSea.png" alt="">
+                        Genesis.app
                     </div>
 
                     <!-- Twitter / X -->
@@ -2435,6 +2446,10 @@ document.getElementById("start-settings")?.addEventListener("click", () => {
         window.openChogIncidentReport();
     }
 
+    if (icon.dataset.app === "chogbro614") {
+        showChogBroError(icon);
+    }
+
 });
 
             // Touch double-tap support for mobile
@@ -2463,6 +2478,9 @@ document.getElementById("start-settings")?.addEventListener("click", () => {
                     if (icon.dataset.app === "chog-incident-report") {
                         window.openChogIncidentReport();
                     }
+                    if (icon.dataset.app === "chogbro614") {
+                        showChogBroError(icon);
+                    }
                 }
                 lastTap = currentTime;
             });
@@ -2475,7 +2493,7 @@ document.getElementById("start-settings")?.addEventListener("click", () => {
         });
 
         /* Window core */
-        function openWindow(title, html, icon) {
+        function openWindow(title, html, icon, displayTitle = title) {
     // If window already open, bring to front (and restore if minimized)
     if (openWindows[title]) {
         const existingWin = openWindows[title].win;
@@ -2519,7 +2537,7 @@ document.getElementById("start-settings")?.addEventListener("click", () => {
         <div class="title-bar">
             <div class="title-bar-text" style="display:flex;align-items:center;gap:4px;">
                 ${icon ? `<img src="${icon}" style="width:16px;height:16px;image-rendering:pixelated;">` : ''}
-                <span>${title}</span>
+                <span>${displayTitle}</span>
             </div>
            <div class="title-bar-controls">
     <button aria-label="Minimize"></button>
@@ -2540,7 +2558,7 @@ document.getElementById("start-settings")?.addEventListener("click", () => {
     taskBtn.innerHTML = `
         <img src="${iconSrc}"
              style="width:16px;height:16px;image-rendering:pixelated;">
-        <span>${title}</span>
+        <span>${displayTitle}</span>
     `;
     taskBtn.style.height = "24px";
     taskBtn.style.marginRight = "4px";
@@ -2609,7 +2627,7 @@ function openChogFinance() {
                         <div class="chog-finance-loader-track" aria-hidden="true">
                             <div class="chog-finance-loader-progress"></div>
                         </div>
-                        <span>Initializing CHOG Finance...</span>
+                        <span>Initializing CHOG Terminal...</span>
                     </div>
                 </div>
             <div class="chog-nav-strip" hidden style="display:flex;justify-content:center;gap:4px;padding:8px;background:transparent;border-bottom:2px outset #fff;align-items:center;font-size:11px;">
@@ -2621,7 +2639,7 @@ function openChogFinance() {
             </div>
             
             <div hidden style="flex:1;padding:16px;margin-bottom:21px;overflow-y:auto;" id="chog-content-area">
-                <div style="font-size:14px;font-weight:bold;margin-bottom:16px;color:#000;">CHOG FINANCE</div>
+                <div style="font-size:14px;font-weight:bold;margin-bottom:16px;color:#000;">CHOG TERMINAL</div>
                 
                 <div class="chog-terminal-panel" style="padding:12px;margin-bottom:12px;">
                     <div class="chog-terminal-panel-heading" style="font-size:11px;font-weight:bold;margin-bottom:8px;">WALLET INSPECTOR</div>
@@ -2702,11 +2720,11 @@ function openChogFinance() {
             </div>
             </div>
             
-            <div class="status-bar">CHOG Finance v1.7</div>
+            <div class="status-bar">CHOG Terminal v1.7</div>
         </div>
     `;
     
-    const win = openWindow("CHOG Finance", html, "assets/images/documents.png");
+    const win = openWindow("CHOG Finance", html, "assets/images/documents.png", "CHOG Terminal");
     win.classList.add('chog-finance-window');
     if (window.innerWidth > 768) {
         win.style.width = '620px';
@@ -4237,7 +4255,7 @@ function openMusicPlayer() {
     <div class="mp-shell">
 
     <div class="mp-header">
-        <span class="mp-title">CHOGWORLD PLAYER 2000</span>
+        <span class="mp-title">CHOGPLAYER 2000</span>
         <span class="mp-sub mp-led mp-led-small" id="mp-track-name">No Track Loaded</span>
     </div>
 
@@ -4360,7 +4378,7 @@ function openMusicPlayer() {
 
 
 
-    musicPlayerWindow = openWindow("Music Player", html, "assets/images/music.png");
+    musicPlayerWindow = openWindow("Music Player", html, "assets/images/music.png", "CHOGPLAYER 2000");
 
     musicPlayerWindow.classList.add("media-window");
     musicPlayerWindow.querySelector("#mp-playlist").focus();
@@ -4879,9 +4897,10 @@ const barWidth = canvas.width / barCount;
 
 
     for (let i = 0; i < 49; i++) {
-        const rawHeight = displayDataArray[i];
+        const mirrorIndex = Math.min(i, 48 - i);
+        const rawHeight = displayDataArray[mirrorIndex];
         // --- E3.7.1 BAR HEIGHT STAGGERING ---
-const stagger = 0.85 + (i % 7) * 0.025;
+const stagger = 0.85 + (mirrorIndex % 7) * 0.025;
 // creates repeating pattern: 0.85 → ~1.0
 
 const barHeight = rawHeight * (canvas.height / 255) * stagger;
@@ -5087,7 +5106,7 @@ function formatTime(seconds) {
 
         /* My Computer */
         function openMyComputer() {
-            openWindow("My Computer", `
+            const win = openWindow("My Computer", `
                                     <div class="explorer-window">
                                         <div class="menu-bar">
                                             <span>File</span><span>Edit</span><span>View</span>
@@ -5151,6 +5170,16 @@ function formatTime(seconds) {
                                         <div class="status-bar">5 object(s)</div>
                                     </div>
                                 `, "assets/images/icon-computer.png");
+
+            const explorerContent = win.querySelector(".explorer-content");
+            if (!explorerContent.dataset.clickSoundEnabled) {
+                explorerContent.addEventListener("dblclick", event => {
+                    if (!event.target.closest(".explorer-item")) return;
+                    win98CloseSound.currentTime = 0;
+                    win98CloseSound.play().catch(() => {});
+                });
+                explorerContent.dataset.clickSoundEnabled = "true";
+            }
         }
 
         /* ===== RECYCLE BIN FILE SYSTEM ===== */
@@ -5524,6 +5553,7 @@ function openClipArtGallery() {
     const motionClipItems = [
         ["assets/videos/CHOGclip1.mp4", "CHOG Clip 1"],
         ["assets/videos/CHOGclip2.mp4", "CHOG Clip 2"],
+        ["assets/videos/EMO x CHOG.mp4", "EMO x CHOG"],
     ];
     
     // All images from chog-library folder
@@ -5676,7 +5706,7 @@ function openClipArtGallery() {
         "photo_6339314473146977708_y.jpg",
     ];
     const win = openWindow("Insert ClipArt", `
-        <div class="clipart-gallery" data-gallery-id="${galleryId}" style="display:flex;flex-direction:column;height:100%;background:#c0c0c0;">
+        <div class="clipart-gallery" data-gallery-id="${galleryId}" style="position:relative;display:flex;flex-direction:column;height:100%;background:#c0c0c0;">
             <style>
                 .clipart-sound-grid {
                     display: grid;
@@ -5768,6 +5798,40 @@ function openClipArtGallery() {
                     grid-template-columns: repeat(3, minmax(0, 1fr));
                     gap: 8px;
                     align-content: start;
+                }
+                .clipart-motion-overlay {
+                    position: absolute;
+                    inset: 0;
+                    z-index: 2;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 14px;
+                    box-sizing: border-box;
+                    background: rgba(0, 0, 0, 0.45);
+                    backdrop-filter: blur(3px);
+                }
+                .clipart-motion-player {
+                    position: relative;
+                    display: flex;
+                    width: min(100%, 560px);
+                    max-height: 100%;
+                    flex-direction: column;
+                }
+                .clipart-motion-player .window-body {
+                    display: flex;
+                    min-height: 0;
+                    justify-content: center;
+                    overflow: hidden;
+                    padding: 0;
+                    background: #000;
+                }
+                .clipart-motion-player video {
+                    display: block;
+                    width: 100%;
+                    max-height: 70vh;
+                    object-fit: contain;
+                    background: #000;
                 }
                 .clipart-motion-card {
                     position: relative;
@@ -5968,24 +6032,39 @@ function openClipArtGallery() {
 
     const openMotionClip = card => {
         const title = card.dataset.motionTitle;
-        if (openWindows[title]) {
-            openWindow(title, "", "assets/images/camera_2.png");
-            return;
-        }
+        if (galleryEl.querySelector(".clipart-motion-overlay")) return;
 
-        const videoWindow = openWindow(title, `
-            <div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;min-height:0;background:#000;">
-                <video data-motion-player src="${card.dataset.motionSrc}" controls preload="metadata" playsinline style="display:block;width:100%;height:100%;max-height:70vh;object-fit:contain;background:#000;"></video>
+        const overlay = document.createElement("div");
+        overlay.className = "clipart-motion-overlay";
+        overlay.innerHTML = `
+            <div class="window clipart-motion-player">
+                <div class="title-bar">
+                    <div class="title-bar-text">${title}</div>
+                    <div class="title-bar-controls">
+                        <button type="button" aria-label="Close"></button>
+                    </div>
+                </div>
+                <div class="window-body">
+                    <video data-motion-player src="${card.dataset.motionSrc}" controls autoplay preload="metadata" playsinline></video>
+                </div>
             </div>
-        `, "assets/images/camera_2.png");
-        const video = videoWindow.querySelector("[data-motion-player]");
+        `;
+        galleryEl.appendChild(overlay);
+
+        const video = overlay.querySelector("[data-motion-player]");
         motionClipPlayers.add(video);
         applyMasterVolumeToMotionClips();
-        videoWindow.querySelector('[aria-label="Close"]').addEventListener("click", () => {
+        video.play().catch(error => {
+            if (error.name !== "AbortError") {
+                console.error("Unable to play Motion Clip:", error);
+            }
+        });
+        overlay.querySelector('[aria-label="Close"]').addEventListener("click", () => {
             video.pause();
             video.removeAttribute("src");
             video.load();
             motionClipPlayers.delete(video);
+            overlay.remove();
         }, true);
     };
 
@@ -6053,13 +6132,12 @@ function startVirusChain() {
 
 /* POPUP 1 */
 function showVirusPopup1() {
-    playErrorSound();
+   playErrorSound();
 
-    const win = createVirusWindow(`
-    <b>5Y573M C0MPR0M153D.</b><br><br>
-        Unauth0r1z3d 1nt3r4ct10n d3t3ct3d.
-bunn¥.exe h4s g41n3d p3rm1ss10ns.<br><br>
-       3n0ugh. v1ru5 1n1t14t3d.
+   const win = createVirusWindow(`
+   <b>CH0G PR0T0C0L 1N1T14T3D.</b><br><br>
+       HUM4N.exe d1s4bl3d. 0N3 BR41N C3LL R3M41N1NG.<br><br>
+       4CC3SS GR4NT3D. F4T4L ERR0R.
     `, "OK", () => {
         win.remove();
 
@@ -6095,6 +6173,52 @@ C4u$3: r3p34t3d 1nt3r4ct10n.<br><br>
 function playErrorSound() {
     win98ErrorSound.currentTime = 0;
     win98ErrorSound.play().catch(() => {});
+}
+
+let chogBroLoading = false;
+
+function showChogBroError(icon) {
+    const title = "CHOGBRO.EXE — Application Error";
+    if (openWindows[title]) {
+        openWindow(title, "", "assets/images/warning.png");
+        return;
+    }
+    if (chogBroLoading) return;
+
+    chogBroLoading = true;
+    showFakeLoader(() => {
+        chogBroLoading = false;
+        showChogBroErrorDialog(icon);
+    });
+}
+
+function showChogBroErrorDialog(icon) {
+    const title = "CHOGBRO.EXE — Application Error";
+    playErrorSound();
+    const win = openWindow(title, `
+        <div style="display:flex;flex-direction:row;gap:10px;font-size:11px;align-items:flex-start;padding:10px;">
+            <img src="assets/images/warning.png" alt="" style="width:64px;height:64px;image-rendering:pixelated;flex-shrink:0;">
+            <div style="flex:1;">
+                <b>CHOGBRO is currently under development.</b><br><br>
+                Please be patient. SOLO retardio is trying his best. You can insert 614 USDC to speed up development.<br><br>
+                Error code: BRO_NOT_FOUND_614
+            </div>
+        </div>
+        <div style="padding:6px;text-align:center;background:#c0c0c0;">
+            <button type="button" class="chogbro-error-ok">OK</button>
+        </div>
+    `, "assets/images/warning.png");
+    win.style.width = "min(340px, calc(100vw - 16px))";
+    win.style.height = "auto";
+    win.style.maxHeight = "calc(100vh - 16px)";
+    win.style.position = "fixed";
+    win.style.top = "40%";
+    win.style.left = "50%";
+    win.style.transform = "translate(-50%, -50%)";
+    win.querySelector(".window-body").style.padding = "0";
+    win.querySelector(".chogbro-error-ok").addEventListener("click", () => {
+        win.querySelector('[aria-label="Close"]').click();
+    });
 }
 
 function createVirusWindow(text, btnText, callback) {

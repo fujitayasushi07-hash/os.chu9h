@@ -436,11 +436,13 @@
                 </div>
 
                 <div class="chog-incident-dialog-layer" data-incident-dialog hidden>
-                    <section class="chog-incident-dialog" role="alertdialog" aria-modal="true" aria-labelledby="chog-incident-dialog-title" aria-describedby="chog-incident-dialog-message">
-                        <header class="chog-incident-dialog-titlebar">
-                            <span id="chog-incident-dialog-title">Dr. Watson — System Error</span>
-                            <button type="button" aria-label="Close error dialog" data-incident-dismiss>×</button>
-                        </header>
+                    <section class="window chog-incident-dialog" role="alertdialog" aria-modal="true" aria-labelledby="chog-incident-dialog-title" aria-describedby="chog-incident-dialog-message">
+                        <div class="title-bar">
+                            <div class="title-bar-text" id="chog-incident-dialog-title">Dr. Watson — System Error</div>
+                            <div class="title-bar-controls">
+                                <button type="button" aria-label="Close" title="Close error dialog" data-incident-dismiss></button>
+                            </div>
+                        </div>
                         <div class="chog-incident-dialog-body">
                             <div class="chog-incident-error-icon" aria-hidden="true">!</div>
                             <p id="chog-incident-dialog-message">
@@ -449,7 +451,7 @@
                                 he can barely find the Start menu.
                             </p>
                         </div>
-                        <div class="chog-incident-dialog-actions">
+                        <div class="chog-incident-dialog-actions" style="background:#c0c0c0;">
                             <button type="button" data-incident-dismiss>OK</button>
                         </div>
                     </section>
@@ -938,7 +940,10 @@
             layer.hidden = true;
             if (returnFocus && returnFocus.isConnected) returnFocus.focus();
         };
-        const openUndoDialog = origin => showLayer(dialog, dialog.querySelector("[data-incident-dismiss]"), origin);
+        const openUndoDialog = origin => {
+            window.playErrorSound();
+            showLayer(dialog, dialog.querySelector("[data-incident-dismiss]"), origin);
+        };
 
         dialog.addEventListener("click", event => {
             if (event.target === dialog || event.target.closest("[data-incident-dismiss]")) hideLayer(dialog);

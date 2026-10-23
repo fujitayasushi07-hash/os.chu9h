@@ -240,7 +240,7 @@
     }
 
     function initWindow() {
-        const win = window.openWindow(TITLE, createMarkup(), WINDOW_ICON);
+        const win = window.openWindow(TITLE, createMarkup(), WINDOW_ICON, "CHOGMii");
         if (!win) return;
         win.classList.add("chog-pfp-window");
         if (win.dataset.pfpMakerInitialized === "true") return;

@@ -92,7 +92,7 @@
         logo.src = ICON;
         logo.alt = "";
         const titles = el("div");
-        titles.append(el("div", "chogmsg-header-title", "CHOG Messenger"), el("div", "chogmsg-header-sub", subtitle));
+        titles.append(el("div", "chogmsg-header-title", "CHOGSpace"), el("div", "chogmsg-header-sub", subtitle));
         header.append(logo, titles);
         return header;
     }
@@ -986,7 +986,7 @@
 
     window.openChogMessenger = function () {
         const alreadyOpen = !!openWindows[TITLE];
-        const win = openWindow(TITLE, '<div class="chogmsg-root"></div>', ICON);
+        const win = openWindow(TITLE, '<div class="chogmsg-root"></div>', ICON, "CHOGSpace");
         if (alreadyOpen || !win) return;
 
         const root = win.querySelector(".chogmsg-root");
